@@ -69,6 +69,7 @@ func (configData *Data) SaveToFile() error {
 	//create config directory if it doesn't exist
 	configDir, err := GetConfigDir()
 	if err != nil {
+		logger.Error("Failed to get config directory: %v", err) // Add this line
 		return err
 	}
 	
@@ -77,16 +78,19 @@ func (configData *Data) SaveToFile() error {
 		filePath := filepath.Join(configDir, context.Name+".json")
 		file, err := os.Create(filePath)
 		if err != nil {
+			logger.Error("Failed to create file %s: %v", filePath, err) // Add this line
 			return err
 		}
 		defer file.Close()
 
 		err = json.NewEncoder(file).Encode(context.CtxData)
 		if err != nil {
+			logger.Error("Failed to encode context data to file %s: %v", filePath, err) // Add this line
 			return err
 		}
 	}
 
+	logger.Error("Successfully saved context data to files") // Add this line
 	return nil
 }
 
