@@ -8,6 +8,7 @@ import (
 
 	"github.com/evnix/natsdash/ds"
 	"github.com/gdamore/tcell/v2"
+	"github.com/nats-io/nats.go"
 	"github.com/rivo/tview"
 )
 
@@ -187,23 +188,25 @@ func (cfp *NatsPage) resetTailFile(logFilePath string) {
 		}
 	}()
 }
+
 func (cfp *NatsPage) subscribeToSubject(subject string) {
     // Unsubscribe from the previous subject if any
-    if cfp.Data.CurrCtx.Conn != nil {
-        cfp.Data.CurrCtx.Conn.Unsubscribe(subject)
+    if cfp.Data.CurrCtx.CoreNatsSub != nil {
+        cfp.Data.CurrCtx.CoreNatsSub.Unsubscribe()
     }
 
     // Subscribe to the new subject
-    cfp.Data.CurrCtx.Conn.Subscribe(subject, func(msg *nats.Msg) {
+    sub, err := cfp.Data.CurrCtx.Conn.Subscribe(subject, func(msg *nats.Msg) {
         // Log the incoming message to the log file
         hourMinSec := time.Now().Format("15:04:05")
         cfp.Data.CurrCtx.LogFile.WriteString(hourMinSec + " SUB[" + msg.Subject + "] " + string(msg.Data) + "\n")
 
-        // Update the log view with the incoming message
-        cfp.app.QueueUpdateDraw(func() {
-            cfp.logView.Write([]byte(hourMinSec + " SUB[" + msg.Subject + "] " + string(msg.Data) + "\n"))
-        })
     })
+	if err != nil {
+		cfp.Data.CurrCtx.LogFile.WriteString(err.Error())
+	}
+	cfp.Data.CurrCtx.CoreNatsSub = sub
+	
 }
 
 func (cfp *NatsPage) sendMessage() {

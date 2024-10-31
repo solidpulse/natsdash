@@ -20,6 +20,7 @@ type Context struct {
 	LogFilePath string      `json:"-"`
 	LogFile     *os.File    `json:"-"`
 	Conn        *nats.Conn `json:"-"`
+	CoreNatsSub *nats.Subscription `json:"-"`
 }
 
 // function to save ConfigData to file in users config directory
