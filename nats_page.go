@@ -74,8 +74,12 @@ func (cfp *NatsPage) redraw(ctx *ds.Context) {
 
 func (cfp *NatsPage) setupInputCapture() {
 	cfp.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyEsc {
+		switch event.Key() {
+		case tcell.KeyEsc:
 			cfp.goBackToContextPage()
+			return nil
+		case tcell.KeyCtrlEnter:
+			cfp.sendMessage()
 			return nil
 		}
 		return event
@@ -164,4 +168,10 @@ func (cfp *NatsPage) resetTailFile(logFilePath string) {
 			}
 		}
 	}()
+}
+func (cfp *NatsPage) sendMessage() {
+	// Implement the logic to send the message here
+	// For example, you can get the message from cfp.txtArea and send it via NATS
+	message := cfp.txtArea.GetText()
+	// Add your NATS sending logic here
 }
