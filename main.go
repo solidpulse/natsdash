@@ -18,8 +18,8 @@ func main() {
 	configDir, _ := ds.GetConfigDir()
 	data.LoadFromDir(configDir)
 	contextPage := NewContextPage(app,data)
-	contextFormPage := NewContextFormPage(app,data)
-	ServerInfoPage := NewServerInfoPage(app,data)
+	contextFormPage := NewContextFormPage(app, data)
+	ServerInfoPage := NewServerInfoPage(app, data)
 	natsPage := NewNatsPage(app, data)
 
 	pages.AddPage("natsPage", natsPage, true, false)
