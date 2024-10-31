@@ -1,6 +1,8 @@
 package main
 
 import (
+	"time"
+
 	"github.com/evnix/natsdash/ds"
 	"github.com/evnix/natsdash/natsutil"
 	"github.com/gdamore/tcell/v2"
@@ -13,6 +15,7 @@ type ContextFormPage struct {
 	form     *tview.Form
 	currName string
 	app      *tview.Application // Add this line
+	footerTxt      *tview.TextView
 }
 
 func NewContextFormPage(app *tview.Application, data *ds.Data) *ContextFormPage {
@@ -52,7 +55,10 @@ func (cfp *ContextFormPage) setupUI() {
 	cfp.AddItem(cfp.form, 0, 18, true)
 
 	// Footer setup
-	footer := tview.NewFlex().SetBorder(true)
+	footer := tview.NewFlex()
+	footer.SetBorder(true)
+	cfp.footerTxt = createTextView("", tcell.ColorWhite)
+	footer.AddItem(cfp.footerTxt, 0, 1, false)
 	cfp.AddItem(footer, 0, 1, false)
 
 	cfp.SetBorderPadding(1, 1, 1, 1)
@@ -95,8 +101,7 @@ func (cfp *ContextFormPage) redraw(ctx *ds.Context) {
 		cfp.form.GetFormItemByLabel("Jetstream Event Prefix").(*tview.InputField).SetText("")
 		cfp.form.GetFormItemByLabel("Inbox Prefix").(*tview.InputField).SetText("")
 	}
-	errTxt := cfp.form.GetFormItem(2).(*tview.TextView)
-	errTxt.SetText("")
+	cfp.notify("", 1*time.Second, "info")
 }
 
 func (cfp *ContextFormPage) setupInputCapture() {
@@ -112,15 +117,14 @@ func (cfp *ContextFormPage) setupInputCapture() {
 func (cfp *ContextFormPage) saveContext() {
 	name := cfp.form.GetFormItemByLabel("Name").(*tview.InputField).GetText()
 	url := cfp.form.GetFormItemByLabel("URL").(*tview.InputField).GetText()
-	errTxt := cfp.form.GetFormItem(2).(*tview.TextView)
-	errTxt.SetText("Connecting to server...")
+	cfp.notify("Connecting to server...", 5*time.Second, "info")
 
 	newCtx := ds.Context{ Name: name, CtxData: ds.NatsCliContext{URL: url}}
 
 	go func() {
 		err := natsutil.TestConnect(url)
 		if err != nil {
-			errTxt.SetText(err.Error())
+			cfp.notify(err.Error(), 5*time.Second, "error")
 			return
 		}
 
@@ -216,6 +220,18 @@ func createContextForm(ctx *ds.Context) *tview.Form {
 	form.AddInputField("Jetstream Domain", ctxData.JetstreamDomain, 0, nil, nil)                                                                     
 	form.AddInputField("Jetstream API Prefix", ctxData.JetstreamAPIPrefix, 0, nil, nil)                                                              
 	form.AddInputField("Jetstream Event Prefix", ctxData.JetstreamEventPrefix, 0, nil, nil)                                                          
-	form.AddInputField("Inbox Prefix", ctxData.InboxPrefix, 0, nil, nil)                                                                             																														 
+	form.AddInputField("Inbox Prefix", ctxData.InboxPrefix, 0, nil, nil) 
 	return form                                                                                                                                  
 }  
+
+
+func (cp *ContextFormPage) notify(message string, duration time.Duration, logLevel string) {
+	cp.footerTxt.SetText(message)
+	cp.footerTxt.SetTextColor(getLogLevelColor(logLevel))
+
+	go func() {
+		time.Sleep(duration)
+		cp.footerTxt.SetText("")
+		cp.footerTxt.SetTextColor(tcell.ColorWhite)
+	}()
+}
