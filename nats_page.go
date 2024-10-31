@@ -47,23 +47,37 @@ func (cfp *NatsPage) setupUI() {
 	cfp.subjectFilter.SetLabel("Filter Subjects: ")
 	cfp.subjectFilter.SetBorder(true)
 	cfp.subjectFilter.SetBorderPadding(0, 0, 1, 1)
-	cfp.subjectFilter.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyTab {
-			cfp.app.SetFocus(cfp.subjectName)
-			return nil
-		}
-		return event
+	// cfp.subjectFilter.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	// 	if event.Key() == tcell.KeyTab {
+	// 		cfp.app.SetFocus(cfp.subjectName)
+	// 		return nil
+	// 	}
+	// 	return event
+	// })
+	cfp.subjectFilter.SetDoneFunc(func(key tcell.Key) {
+		cfp.subscribeToSubject(cfp.subjectFilter.GetText())
+		cfp.app.SetFocus(cfp.logView)
 	})
 	cfp.AddItem(cfp.subjectFilter, 0, 6, false)
 
 	cfp.logView = tview.NewTextView()
 	cfp.logView.SetTitle(cfp.Data.CurrCtx.LogFilePath)
 	cfp.logView.SetBorder(true)
+	cfp.logView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyTab {
+			cfp.app.SetFocus(cfp.subjectName)
+			return nil
+		}
+		return event
+	})
 	cfp.AddItem(cfp.logView, 0, 50, false)
 
 	cfp.subjectName = tview.NewInputField()
 	cfp.subjectName.SetLabel("Target Subject: ")
 	cfp.subjectName.SetBorder(true)
+	cfp.subjectName.SetDoneFunc(func(key tcell.Key) {
+		cfp.app.SetFocus(cfp.txtArea)
+	})
 	cfp.AddItem(cfp.subjectName, 0, 6, false)
 
 	cfp.txtArea = tview.NewTextArea()
@@ -190,6 +204,7 @@ func (cfp *NatsPage) resetTailFile(logFilePath string) {
 }
 
 func (cfp *NatsPage) subscribeToSubject(subject string) {
+	hourMinSec := time.Now().Format("15:04:05")
     // Unsubscribe from the previous subject if any
     if cfp.Data.CurrCtx.CoreNatsSub != nil {
         cfp.Data.CurrCtx.CoreNatsSub.Unsubscribe()
@@ -198,12 +213,14 @@ func (cfp *NatsPage) subscribeToSubject(subject string) {
     // Subscribe to the new subject
     sub, err := cfp.Data.CurrCtx.Conn.Subscribe(subject, func(msg *nats.Msg) {
         // Log the incoming message to the log file
-        hourMinSec := time.Now().Format("15:04:05")
+        
         cfp.Data.CurrCtx.LogFile.WriteString(hourMinSec + " SUB[" + msg.Subject + "] " + string(msg.Data) + "\n")
 
     })
 	if err != nil {
 		cfp.Data.CurrCtx.LogFile.WriteString(err.Error())
+	}else{
+		cfp.Data.CurrCtx.LogFile.WriteString(hourMinSec + " Subscribed to " + subject + "\n")
 	}
 	cfp.Data.CurrCtx.CoreNatsSub = sub
 	
