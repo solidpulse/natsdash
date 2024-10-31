@@ -173,5 +173,8 @@ func (cfp *NatsPage) sendMessage() {
 	// Implement the logic to send the message here
 	// For example, you can get the message from cfp.txtArea and send it via NATS
 	message := cfp.txtArea.GetText()
-	// Add your NATS sending logic here
+	subject := cfp.subjectName.GetText()
+	cfp.Data.CurrCtx.Conn.Publish(subject, []byte(message))
+	hourMinSec := time.Now().Format("15:04:05")
+	cfp.Data.CurrCtx.LogFile.WriteString(hourMinSec+" PUB["+ subject + "] " + message + "\n")
 }
