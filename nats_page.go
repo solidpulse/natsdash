@@ -67,6 +67,9 @@ func (cfp *NatsPage) setupUI() {
 		if event.Key() == tcell.KeyTab {
 			cfp.app.SetFocus(cfp.subjectName)
 			return nil
+		} else if event.Key() == tcell.KeyTab && event.Modifiers() == tcell.ModShift {
+			cfp.app.SetFocus(cfp.subjectFilter)
+			return nil
 		}
 		return event
 	})
@@ -78,14 +81,21 @@ func (cfp *NatsPage) setupUI() {
 	cfp.subjectName.SetDoneFunc(func(key tcell.Key) {
 		cfp.app.SetFocus(cfp.txtArea)
 	})
+	cfp.subjectName.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyTab && event.Modifiers() == tcell.ModShift {
+			cfp.app.SetFocus(cfp.logView)
+			return nil
+		}
+		return event
+	})
 	cfp.AddItem(cfp.subjectName, 0, 6, false)
 
 	cfp.txtArea = tview.NewTextArea()
 	cfp.txtArea.SetPlaceholder("Message...")
 	cfp.txtArea.SetBorder(true)
 	cfp.txtArea.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyF5 {
-			cfp.sendMessage()
+		if event.Key() == tcell.KeyTab && event.Modifiers() == tcell.ModShift {
+			cfp.app.SetFocus(cfp.subjectName)
 			return nil
 		} else if event.Key() == tcell.KeyEnter && event.Modifiers() == tcell.ModAlt {
 			cfp.sendMessage()
@@ -215,10 +225,10 @@ func (cfp *NatsPage) subscribeToSubject(subject string) {
         // Log the incoming message to the log file
         
         cfp.Data.CurrCtx.LogFile.WriteString(hourMinSec + " SUB[" + msg.Subject + "] " + string(msg.Data) + "\n")
-
+		cfp.logView.ScrollToEnd()
     })
 	if err != nil {
-		cfp.Data.CurrCtx.LogFile.WriteString(err.Error())
+		cfp.Data.CurrCtx.LogFile.WriteString(err.Error()+ "\n")
 	}else{
 		cfp.Data.CurrCtx.LogFile.WriteString(hourMinSec + " Subscribed to " + subject + "\n")
 	}
@@ -234,4 +244,5 @@ func (cfp *NatsPage) sendMessage() {
 	cfp.Data.CurrCtx.Conn.Publish(subject, []byte(message))
 	hourMinSec := time.Now().Format("15:04:05")
 	cfp.Data.CurrCtx.LogFile.WriteString(hourMinSec+" PUB["+ subject + "] " + message + "\n")
+	cfp.logView.ScrollToEnd()
 }
