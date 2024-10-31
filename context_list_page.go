@@ -1,19 +1,23 @@
 package main
 
 import (
+	"github.com/evnix/natsdash/ds"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
 
 type ContextPage struct {
 	*tview.Flex
+	Data        *ds.Data
 	ctxListView *tview.List
 }
 
-func NewContextPage() *ContextPage {
+func NewContextPage(data *ds.Data) *ContextPage {
 	cp := &ContextPage{
 		Flex: tview.NewFlex().SetDirection(tview.FlexRow),
 	}
+
+	cp.Data = data
 
 	cp.setupUI()
 	cp.setupInputCapture()
@@ -58,9 +62,9 @@ func (cp *ContextPage) setupInputCapture() {
 	})
 }
 
-func (cp *ContextPage) UpdateData(contexts []string) {
+func (cp *ContextPage) Redraw() {
 	cp.ctxListView.Clear()
-	for _, ctx := range contexts {
-		cp.ctxListView.AddItem(ctx, "", 0, nil)
+	for _, ctx := range cp.Data.Contexts {
+		cp.ctxListView.AddItem(ctx.Name, "", 0, nil)
 	}
 }

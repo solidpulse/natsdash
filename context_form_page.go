@@ -1,22 +1,24 @@
 package main
 
 import (
-	"fmt"
-
+	"github.com/evnix/natsdash/ds"
 	"github.com/gdamore/tcell/v2"
+	"github.com/google/uuid"
 	"github.com/rivo/tview"
 )
 
 type ContextFormPage struct {
 	*tview.Flex
+	Data *ds.Data
 	form *tview.Form
 }
 
-func NewContextFormPage() *ContextFormPage {
+func NewContextFormPage(data *ds.Data) *ContextFormPage {
 	cfp := &ContextFormPage{
 		Flex: tview.NewFlex().SetDirection(tview.FlexRow),
 	}
 
+	cfp.Data = data
 	cfp.setupUI()
 	cfp.setupInputCapture()
 
@@ -60,7 +62,11 @@ func (cfp *ContextFormPage) saveContext() {
 	name := cfp.form.GetFormItemByLabel("Name").(*tview.InputField).GetText()
 	url := cfp.form.GetFormItemByLabel("URL").(*tview.InputField).GetText()
 	// TODO: Implement save functionality
-	fmt.Printf("Saving context: Name=%s, URL=%s\n", name, url)
+
+	uuid := uuid.New().String()
+	newCtx := ds.Context{UUID: uuid, Name: name, URL: url}
+	cfp.Data.Contexts = append(cfp.Data.Contexts, newCtx)
+	cfp.Data.SaveToFile()
 	cfp.goBackToContextPage()
 }
 
@@ -72,4 +78,6 @@ func (cfp *ContextFormPage) cancelForm() {
 
 func (cfp *ContextFormPage) goBackToContextPage() {
 	pages.SwitchToPage("contexts")
+	_, b := pages.GetFrontPage()
+	b.(*ContextPage).Redraw()
 }

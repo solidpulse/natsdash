@@ -1,1 +1,2 @@
-go run .
+go build -gcflags=all="-N -l"
+./natsdash
