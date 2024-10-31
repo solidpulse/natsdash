@@ -128,7 +128,6 @@ func (cfp *NatsPage) resetTailFile(logFile *os.File) {
 			default:
 				cfp.app.QueueUpdateDraw(func() {
 					cfp.logView.Write([]byte(scanner.Text() + "\n"))
-					go cfp.app.Draw()
 				})
 			}
 		}
