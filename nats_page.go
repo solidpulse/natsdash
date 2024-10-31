@@ -187,6 +187,25 @@ func (cfp *NatsPage) resetTailFile(logFilePath string) {
 		}
 	}()
 }
+func (cfp *NatsPage) subscribeToSubject(subject string) {
+    // Unsubscribe from the previous subject if any
+    if cfp.Data.CurrCtx.Conn != nil {
+        cfp.Data.CurrCtx.Conn.Unsubscribe(subject)
+    }
+
+    // Subscribe to the new subject
+    cfp.Data.CurrCtx.Conn.Subscribe(subject, func(msg *nats.Msg) {
+        // Log the incoming message to the log file
+        hourMinSec := time.Now().Format("15:04:05")
+        cfp.Data.CurrCtx.LogFile.WriteString(hourMinSec + " SUB[" + msg.Subject + "] " + string(msg.Data) + "\n")
+
+        // Update the log view with the incoming message
+        cfp.app.QueueUpdateDraw(func() {
+            cfp.logView.Write([]byte(hourMinSec + " SUB[" + msg.Subject + "] " + string(msg.Data) + "\n"))
+        })
+    })
+}
+
 func (cfp *NatsPage) sendMessage() {
 	// Implement the logic to send the message here
 	// For example, you can get the message from cfp.txtArea and send it via NATS
