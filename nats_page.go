@@ -17,12 +17,15 @@ type NatsPage struct {
 	logView       *tview.TextView
 	subjectName   *tview.InputField
 	txtArea       *tview.TextArea
+	tailingDone  chan struct{} // Add this line
+	tailingMutex sync.Mutex    // Add this line
 }
 
 func NewNatsPage(app *tview.Application, data *ds.Data) *NatsPage {
 	cfp := &NatsPage{
 		Flex: tview.NewFlex().SetDirection(tview.FlexRow),
 		app:  app, // Add this line
+		tailingDone: make(chan struct{}), // Add this line
 	}
 	cfp.Data = data
 	cfp.setupUI()
@@ -102,6 +105,14 @@ func createNatsPageHeaderRow() *tview.Flex {
 	return headerRow
 }
 func (cfp *NatsPage) resetTailFile(logFile *os.File) {
+	// Stop the previous tailing goroutine
+	cfp.tailingMutex.Lock()
+	if cfp.tailingDone != nil {
+		close(cfp.tailingDone)
+	}
+	cfp.tailingDone = make(chan struct{})
+	cfp.tailingMutex.Unlock()
+
 	// Clear the log view
 	cfp.logView.Clear()
 
@@ -109,9 +120,14 @@ func (cfp *NatsPage) resetTailFile(logFile *os.File) {
 	go func() {
 		scanner := bufio.NewScanner(logFile)
 		for scanner.Scan() {
-			cfp.app.QueueUpdateDraw(func() {
-				cfp.logView.Write([]byte(scanner.Text() + "\n"))
-			})
+			select {
+			case <-cfp.tailingDone:
+				return
+			default:
+				cfp.app.QueueUpdateDraw(func() {
+					cfp.logView.Write([]byte(scanner.Text() + "\n"))
+				})
+			}
 		}
 		if err := scanner.Err(); err != nil {
 			cfp.app.QueueUpdateDraw(func() {
