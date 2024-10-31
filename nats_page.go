@@ -87,7 +87,7 @@ func (cfp *NatsPage) setupUI() {
 	})
 	cfp.subjectName.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyTab {
-			cfp.app.SetFocus(cfp.logView)
+			cfp.app.SetFocus(cfp.txtArea)
 			return nil
 		}
 		return event
@@ -156,7 +156,7 @@ func createNatsPageHeaderRow() *tview.Flex {
 	headerRow1.SetDirection(tview.FlexRow)
 	headerRow1.SetBorder(false)
 
-	headerRow1.AddItem(createTextView("[Esc] Back  | [Alt+Enter] Send | [F2] Filter | [F3] Subject | [F4] Body", tcell.ColorWhite), 0, 1, false)
+	headerRow1.AddItem(createTextView("[Esc] Back  |  [Tab] Focus Next  | [Alt+Enter] Send ", tcell.ColorWhite), 0, 1, false)
 
 	headerRow.AddItem(headerRow1, 0, 1, false)
 	headerRow.SetTitle("NATS-DASH")
