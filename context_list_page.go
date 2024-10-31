@@ -114,16 +114,20 @@ func (cp *ContextPage) setupInputCapture() {
 				// Open log file
 				currentTime := time.Now().Format("2006-01-02")
 				logFilePath := path.Join(os.TempDir(), "natsdash", fmt.Sprintf("%s_%s.log", currentTime, data.CurrCtx.UUID[:4]))
-				data.CurrCtx.LogFilePath = logFilePath
-				logFile, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0777)
+				logDir := path.Dir(logFilePath)
+				if err := os.MkdirAll(logDir, 0755); err != nil {
+					cp.notify(fmt.Sprintf("Error creating log directory: %s", err.Error()), 5*time.Second)
+					return
+				}
+				logFile, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 				if err != nil {
 					cp.notify(fmt.Sprintf("Error opening log file: %s", err.Error()), 5*time.Second)
 					return
 				}
 				data.CurrCtx.LogFilePath = logFilePath
 				data.CurrCtx.LogFile = logFile
-				logFile.WriteString("Connected to NATS. ClusterName: "+conn.ConnectedClusterName()+
-				"ServerID: "+conn.ConnectedServerId())
+				logFile.WriteString("Connected to NATS. ClusterName: " + conn.ConnectedClusterName() +
+					" ServerID: " + conn.ConnectedServerId() + "\n")
 
 			}()
 		}
