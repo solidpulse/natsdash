@@ -14,10 +14,12 @@ type Data struct {
 }
 
 type Context struct {
-	UUID string
-	Name string
-	URL  string
-	Conn *nats.Conn `json:"-"`
+	UUID        string
+	Name        string
+	URL         string
+	LogFilePath string      `json:"-"`
+	LogFile     *os.File    `json:"-"`
+	Conn        *nats.Conn `json:"-"`
 }
 
 // function to save ConfigData to file in users config directory
