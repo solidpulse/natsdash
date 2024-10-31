@@ -1,7 +1,12 @@
 package main
 
 import (
+	"fmt"
+	"os"
+	"path"
+
 	"github.com/evnix/natsdash/ds"
+	"github.com/evnix/natsdash/natsutil"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 )
@@ -11,6 +16,7 @@ type ContextPage struct {
 	Data        *ds.Data
 	ctxListView *tview.List
 	app         *tview.Application // Add this line
+	footer      *tview.TextView
 }
 
 func NewContextPage(app *tview.Application, data *ds.Data) *ContextPage {
@@ -42,10 +48,13 @@ func (cp *ContextPage) setupUI() {
 	cp.AddItem(ctxListBox, 0, 18, false)
 
 	// Footer setup
-	footer := tview.NewFlex().SetBorder(true)
-	cp.AddItem(footer, 0, 1, false)
-
-	cp.SetBorderPadding(1, 1, 1, 1)
+	footer := tview.NewFlex()
+	footer.SetBorder(true)
+	footer.SetBorderPadding(0, 0, 1, 1)
+	cp.footer = createTextView("Primary Author: Avinash D'Silva | contact: dsilva.avinash@outlook.com", tcell.ColorWhite)
+	footer.AddItem(cp.footer, 0, 1, false)
+	cp.AddItem(footer, 0, 2, false)
+	cp.SetBorderPadding(1, 0, 1, 1)
 }
 
 func (cp *ContextPage) setupInputCapture() {
