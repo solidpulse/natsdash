@@ -28,7 +28,7 @@ func NewContextFormPage(app *tview.Application, data *ds.Data) *ContextFormPage 
 	// Establish NATS connection when the context_form page opens
 	go func() {
 		if data.CurrCtx.CtxData.URL != "" {
-			conn, err := natsutil.Connect(data.CurrCtx.CtxData.URL)
+			conn, err := natsutil.Connect(&data.CurrCtx.CtxData)
 			if err != nil {
 				// Handle error
 				return

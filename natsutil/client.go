@@ -3,8 +3,8 @@ package natsutil
 import (
 	"time"
 
+	"github.com/evnix/natsdash/ds"
 	"github.com/nats-io/nats.go"
-	"github.com/your-repo/ds" // Adjust the import path as necessary
 )
 
 func TestConnect(url string) error {
@@ -63,12 +63,12 @@ func Connect(ctx *ds.NatsCliContext) (*nats.Conn, error) {
 	if ctx.InboxPrefix != "" {
 		options = append(options, nats.CustomInboxPrefix(ctx.InboxPrefix))
 	}
-	if ctx.UserJWT != "" {
-		options = append(options, nats.UserJWT(ctx.UserJWT, func(nonce []byte) ([]byte, error) {
-			// Implement your UserJWT signing logic here
-			return nil, nil
-		}))
-	}
+	// if ctx.UserJWT != "" {
+	// 	options = append(options, nats.UserJWT(ctx.UserJWT, func(nonce []byte) ([]byte, error) {
+	// 		// Implement your UserJWT signing logic here
+	// 		return nil, nil
+	// 	}))
+	// }
 
 	return nats.Connect(ctx.URL, options...)
 }

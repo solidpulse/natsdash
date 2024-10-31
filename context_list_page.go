@@ -119,7 +119,7 @@ func (cp *ContextPage) setupInputCapture() {
 			// Connect to NATS
 			go func() {
 				cp.notify("Connecting to NATS...", 5*time.Second, "info")
-				conn, err := natsutil.Connect(data.CurrCtx.CtxData.URL)
+				conn, err := natsutil.Connect(&data.CurrCtx.CtxData)
 				if err != nil {
 					cp.notify(fmt.Sprintf("Error connecting to NATS: %s", err.Error()), 5*time.Second, "error")
 					return
