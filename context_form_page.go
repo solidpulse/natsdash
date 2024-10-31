@@ -133,7 +133,6 @@ func createContextFormHeaderRow() *tview.Flex {
 	headerRow1.SetDirection(tview.FlexRow)
 	headerRow1.SetBorder(false)
 
-	headerRow1.AddItem(createColoredTextView("[white:green] NATS [yellow:white] DASH ", tcell.ColorWhite), 0, 1, false)
 	headerRow1.AddItem(createTextView("[Esc] Back", tcell.ColorWhite), 0, 1, false)
 
 	headerRow2 := tview.NewFlex()

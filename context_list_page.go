@@ -106,13 +106,14 @@ func createContexListHeaderRow() *tview.Flex {
 	headerRow.SetBorder(false)
 	headerRow.
 		SetDirection(tview.FlexColumn).
-		SetBorderPadding(1, 0, 1, 1)
+		SetBorderPadding(0, 0, 1, 1)
 
 	headerRow1 := tview.NewFlex()
 	headerRow1.SetDirection(tview.FlexRow)
 	headerRow1.SetBorder(false)
 
 	headerRow1.AddItem(createColoredTextView("[white:green] NATS [yellow:white] DASH ", tcell.ColorWhite), 0, 1, false)
+	headerRow1.AddItem(createTextView("", tcell.ColorWhite), 0, 1, false)
 	headerRow1.AddItem(createTextView("[a] Add", tcell.ColorWhite), 0, 1, false)
 	headerRow1.AddItem(createTextView("[e] Edit", tcell.ColorWhite), 0, 1, false)
 
