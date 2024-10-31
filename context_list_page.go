@@ -2,9 +2,11 @@ package main
 
 import (
 	"fmt"
+	"go/build"
 	"log"
 	"os"
 	"path"
+	"runtime/debug"
 	"time"
 
 	"github.com/evnix/natsdash/ds"
@@ -56,7 +58,8 @@ func (cp *ContextPage) setupUI() {
 	footer.SetBorder(true)
 	footer.SetDirection(tview.FlexRow)
 	footer.SetBorderPadding(0, 0, 1, 1)
-	cp.footerTxt = createTextView("Primary Author: Avinash D'Silva | contact: dsilva.avinash@outlook.com", tcell.ColorWhite)
+
+	cp.footerTxt = createTextView("NatsDash by SolidPulse | contact: solidpulse@outlook.com", tcell.ColorWhite)
 	footer.AddItem(cp.footerTxt, 0, 1, false)
 	cp.AddItem(footer, 3, 2, false)
 	cp.SetBorderPadding(1, 0, 1, 1)
@@ -70,6 +73,12 @@ func (cp *ContextPage) setupUI() {
 		cp.ctxListView.AddItem(ctx.Name, "", 0, nil)
 	}
 	
+}
+
+func (cp *ContextPage) displayLicenseCopyrightInfo()  {
+	buildInfo, _ := debug.ReadBuildInfo()
+	currVersion := buildInfo.Main.Version
+	cp.footerTxt.SetText(fmt.Sprintf("NatsDash by SolidPulse | contact: solidpulse@outlook.com | Cuurent: %s", currVersion))
 }
 
 func (cp *ContextPage) setupInputCapture() {
