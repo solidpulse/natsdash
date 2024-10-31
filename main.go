@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/evnix/natsdash/ds"
 	"github.com/rivo/tview"
-	_ "github.com/evnix/natsdash/logger"
+	"github.com/evnix/natsdash/logger"
 )
 
 var app *tview.Application
@@ -11,6 +11,8 @@ var pages *tview.Pages
 var data *ds.Data
 
 func main() {
+	logger.Init()
+	defer logger.CloseLogger()
 	app = tview.NewApplication()
 	pages = tview.NewPages()
 
