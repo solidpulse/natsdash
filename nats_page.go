@@ -83,6 +83,14 @@ func (cfp *NatsPage) setupInputCapture() {
 }
 
 func (cfp *NatsPage) goBackToContextPage() {
+	// Stop the tailing goroutine
+	cfp.tailingMutex.Lock()
+	if cfp.tailingDone != nil {
+		close(cfp.tailingDone)
+	}
+	cfp.tailingDone = nil
+	cfp.tailingMutex.Unlock()
+
 	pages.SwitchToPage("contexts")
 	_, b := pages.GetFrontPage()
 	b.(*ContextPage).Redraw()
