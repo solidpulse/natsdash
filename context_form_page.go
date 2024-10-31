@@ -120,6 +120,7 @@ func (cfp *ContextFormPage) goBackToContextPage() {
 	pages.SwitchToPage("contexts")
 	_, b := pages.GetFrontPage()
 	b.(*ContextPage).Redraw()
+	cfp.app.SetFocus(b) // Add this line
 }
 
 func createContextFormHeaderRow() *tview.Flex {
