@@ -46,7 +46,7 @@ func (cfp *ContextFormPage) setupUI() {
 	cfp.AddItem(headerRow, 0, 4, false)
 
 	// Form setup
-	cfp.form = createContextForm(&cfp.Data.CurrCtx.CtxData)
+	cfp.form = createContextForm(&cfp.Data.CurrCtx)
 	cfp.form.AddButton("Save", cfp.saveContext).
 		AddButton("Cancel", cfp.cancelForm)
 	cfp.AddItem(cfp.form, 0, 18, true)
@@ -61,6 +61,7 @@ func (cfp *ContextFormPage) setupUI() {
 func (cfp *ContextFormPage) redraw(ctx *ds.Context) {
 	cfp.currName = ctx.Name
 	if cfp.currName != "" {
+		cfp.form.GetFormItemByLabel("Name").(*tview.InputField).SetText(ctx.Name)
 		cfp.form.GetFormItemByLabel("Description").(*tview.InputField).SetText(ctx.CtxData.Description)
 		cfp.form.GetFormItemByLabel("URL").(*tview.InputField).SetText(ctx.CtxData.URL)
 		cfp.form.GetFormItemByLabel("Token").(*tview.InputField).SetText(ctx.CtxData.Token)
@@ -78,6 +79,7 @@ func (cfp *ContextFormPage) redraw(ctx *ds.Context) {
 		cfp.form.GetFormItemByLabel("Inbox Prefix").(*tview.InputField).SetText(ctx.CtxData.InboxPrefix)
 		cfp.form.GetFormItemByLabel("User JWT").(*tview.InputField).SetText(ctx.CtxData.UserJWT)
 	} else {
+		cfp.form.GetFormItemByLabel("Name").(*tview.InputField).SetText("")
 		cfp.form.GetFormItemByLabel("Description").(*tview.InputField).SetText("")
 		cfp.form.GetFormItemByLabel("URL").(*tview.InputField).SetText("nats://")
 		cfp.form.GetFormItemByLabel("Token").(*tview.InputField).SetText("")
@@ -180,3 +182,27 @@ func createContextFormHeaderRow() *tview.Flex {
 
 	return headerRow
 }
+
+func createContextForm(ctx *ds.Context) *tview.Form {                                                                                     
+	form := tview.NewForm()                                                                                                                      
+	form.SetTitle("Context Form").SetBorder(true)                                                                                                
+	form.AddInputField("Name", ctx.Name, 0, nil, nil)                                                                              
+															
+	ctxData := ctx.CtxData
+	form.AddInputField("Description", ctxData.Description, 0, nil, nil)                                                                              
+	form.AddInputField("URL", ctxData.URL, 0, nil, nil)                                                                                              
+	form.AddInputField("Token", ctxData.Token, 0, nil, nil)                                                                                          
+	form.AddInputField("User", ctxData.User, 0, nil, nil)                                                                                            
+	form.AddInputField("Password", ctxData.Password, 0, nil, nil)                                                                                    
+	form.AddInputField("Creds", ctxData.Creds, 0, nil, nil)                                                                                          
+	form.AddInputField("Nkey", ctxData.Nkey, 0, nil, nil)                                                                                            
+	form.AddInputField("Cert", ctxData.Cert, 0, nil, nil)                                                                                            
+	form.AddInputField("Key", ctxData.Key, 0, nil, nil)                                                                                              
+	form.AddInputField("CA", ctxData.CA, 0, nil, nil)                                                                                                
+	form.AddInputField("NSC", ctxData.NSC, 0, nil, nil)                                                                                              
+	form.AddInputField("Jetstream Domain", ctxData.JetstreamDomain, 0, nil, nil)                                                                     
+	form.AddInputField("Jetstream API Prefix", ctxData.JetstreamAPIPrefix, 0, nil, nil)                                                              
+	form.AddInputField("Jetstream Event Prefix", ctxData.JetstreamEventPrefix, 0, nil, nil)                                                          
+	form.AddInputField("Inbox Prefix", ctxData.InboxPrefix, 0, nil, nil)                                                                             																														 
+	return form                                                                                                                                  
+}  
