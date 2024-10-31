@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/evnix/natsdash/ds"
+	"github.com/evnix/natsdash/natsutil"
 	"github.com/gdamore/tcell/v2"
 	"github.com/google/uuid"
 	"github.com/rivo/tview"
@@ -38,6 +39,7 @@ func (cfp *ContextFormPage) setupUI() {
 	cfp.form.
 		AddInputField("Name", "", 0, nil, nil).
 		AddInputField("URL", "nats://", 0, nil, nil).
+		AddTextView("", "", 0, 1, false, false).
 		AddButton("Save", cfp.saveContext).
 		AddButton("Cancel", cfp.cancelForm)
 	cfp.AddItem(cfp.form, 0, 18, true)
@@ -58,6 +60,8 @@ func (cfp *ContextFormPage) redraw(ctx *ds.Context) {
 		cfp.form.GetFormItemByLabel("Name").(*tview.InputField).SetText("")
 		cfp.form.GetFormItemByLabel("URL").(*tview.InputField).SetText("nats://")
 	}
+	errTxt := cfp.form.GetFormItem(2).(*tview.TextView)
+	errTxt.SetText("")
 }
 
 func (cfp *ContextFormPage) setupInputCapture() {
@@ -73,27 +77,38 @@ func (cfp *ContextFormPage) setupInputCapture() {
 func (cfp *ContextFormPage) saveContext() {
 	name := cfp.form.GetFormItemByLabel("Name").(*tview.InputField).GetText()
 	url := cfp.form.GetFormItemByLabel("URL").(*tview.InputField).GetText()
+	errTxt := cfp.form.GetFormItem(2).(*tview.TextView)
+	errTxt.SetText("Connecting to server...")
 	// TODO: Implement save functionality
 
 	uuid := uuid.New().String()
 	newCtx := ds.Context{UUID: uuid, Name: name, URL: url}
 
-	if cfp.currUUID != "" {
-		for i := range cfp.Data.Contexts {
-			if cfp.Data.Contexts[i].UUID == cfp.currUUID {
-				cfp.Data.Contexts[i].Name = name
-				cfp.Data.Contexts[i].URL = url
-				cfp.Data.CurrCtx = cfp.Data.Contexts[i]
-				break
-			}
+	go func() {
+		err := natsutil.TestConnect()
+		if err != nil {
+			errTxt.SetText(err.Error())
+			return
 		}
-	} else {
-		cfp.Data.Contexts = append(cfp.Data.Contexts, newCtx)
-		cfp.Data.CurrCtx = newCtx
-	}
 
-	cfp.Data.SaveToFile()
-	cfp.goBackToContextPage()
+		if cfp.currUUID != "" {
+			for i := range cfp.Data.Contexts {
+				if cfp.Data.Contexts[i].UUID == cfp.currUUID {
+					cfp.Data.Contexts[i].Name = name
+					cfp.Data.Contexts[i].URL = url
+					cfp.Data.CurrCtx = cfp.Data.Contexts[i]
+					break
+				}
+			}
+		} else {
+			cfp.Data.Contexts = append(cfp.Data.Contexts, newCtx)
+			cfp.Data.CurrCtx = newCtx
+		}
+
+		cfp.Data.SaveToFile()
+		cfp.goBackToContextPage()
+	}()
+
 }
 
 func (cfp *ContextFormPage) cancelForm() {
