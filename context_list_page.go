@@ -171,6 +171,15 @@ func (cp *ContextPage) readNatsCliContexts() ([]ds.Context, error) {
 	}
 
 	contextDir := path.Join(configDir, "nats", "context")
+
+	// Check if the directory exists, if not, create it
+	if _, err := os.Stat(contextDir); os.IsNotExist(err) {
+		err = os.MkdirAll(contextDir, 0755)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	files, err := os.ReadDir(contextDir)
 	if err != nil {
 		return nil, err
