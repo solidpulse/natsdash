@@ -17,3 +17,19 @@ func createTextView(text string, color tcell.Color) *tview.TextView {
 		SetTextColor(color).
 		SetText(text)
 }
+
+
+func getLogLevelColor(logLevel string) tcell.Color {
+	switch logLevel {
+	case "debug":
+		return tcell.ColorYellow
+	case "info":
+		return tcell.ColorGreen
+	case "warn":
+		return tcell.ColorOrange
+	case "error":
+		return tcell.ColorRed
+	default:
+		return tcell.ColorWhite
+	}
+}
