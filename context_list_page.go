@@ -55,7 +55,7 @@ func (cp *ContextPage) setupUI() {
 		cp.notify(fmt.Sprintf("Error reading NATS CLI contexts: %s", err.Error()), 5*time.Second)
 	} else {
 		for _, ctx := range contexts {
-			cp.ctxListView.AddItem(ctx.Description, ctx.URL, 0, nil)
+			cp.ctxListView.AddItem(ctx.Name, "", 0, nil)
 		}
 	}
 
@@ -114,7 +114,7 @@ func (cp *ContextPage) setupInputCapture() {
 			// Connect to NATS
 			go func() {
 				cp.notify("Connecting to NATS...", 5*time.Second)
-				conn, err := natsutil.Connect(data.CurrCtx.URL)
+				conn, err := natsutil.Connect(data.CurrCtx.CtxData.URL)
 				if err != nil {
 					cp.notify(fmt.Sprintf("Error connecting to NATS: %s", err.Error()), 5*time.Second)
 					return
@@ -123,7 +123,7 @@ func (cp *ContextPage) setupInputCapture() {
 
 				// Open log file
 				currentTime := time.Now().Format("2006-01-02")
-				logFilePath := path.Join(os.TempDir(), "natsdash", fmt.Sprintf("%s_%s.log", currentTime, data.CurrCtx.UUID[:4]))
+				logFilePath := path.Join(os.TempDir(), "natsdash", fmt.Sprintf("%s_%s.log", currentTime, data.CurrCtx.Name[:4]))
 				logDir := path.Dir(logFilePath)
 				if err := os.MkdirAll(logDir, 0755); err != nil {
 					cp.notify(fmt.Sprintf("Error creating log directory: %s", err.Error()), 5*time.Second)

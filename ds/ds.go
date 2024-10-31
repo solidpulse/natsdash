@@ -38,11 +38,29 @@ type NatsCliContext struct {
 }
 type Context struct {
 	Name        string 
-	CtxData     string 
+	CtxData     NatsCliContext 
 	LogFilePath string      `json:"-"`
 	LogFile     *os.File    `json:"-"`
 	Conn        *nats.Conn `json:"-"`
 	CoreNatsSub *nats.Subscription `json:"-"`
+}
+
+
+func GetConfigDir() (string, error) {
+	// Get the user's home directory
+	userConfigDir, err := os.UserConfigDir()
+	if err != nil {
+		return "",err
+	}
+	//create config directory if it doesn't exist
+	configDir := userConfigDir + "/nats"
+	if _, err := os.Stat(configDir); os.IsNotExist(err) {
+		err = os.Mkdir(configDir, 0755)
+		if err != nil {
+			return "",err
+		}
+	}
+	return configDir, nil
 }
 
 // function to save ConfigData to file in users config directory

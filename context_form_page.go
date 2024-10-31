@@ -4,7 +4,6 @@ import (
 	"github.com/evnix/natsdash/ds"
 	"github.com/evnix/natsdash/natsutil"
 	"github.com/gdamore/tcell/v2"
-	"github.com/google/uuid"
 	"github.com/rivo/tview"
 )
 
@@ -12,7 +11,7 @@ type ContextFormPage struct {
 	*tview.Flex
 	Data     *ds.Data
 	form     *tview.Form
-	currUUID string
+	currName string
 	app      *tview.Application // Add this line
 }
 
@@ -28,8 +27,8 @@ func NewContextFormPage(app *tview.Application, data *ds.Data) *ContextFormPage 
 
 	// Establish NATS connection when the context_form page opens
 	go func() {
-		if data.CurrCtx.URL != "" {
-			conn, err := natsutil.Connect(data.CurrCtx.URL)
+		if data.CurrCtx.CtxData.URL != "" {
+			conn, err := natsutil.Connect(data.CurrCtx.CtxData.URL)
 			if err != nil {
 				// Handle error
 				return
@@ -66,10 +65,10 @@ func (cfp *ContextFormPage) setupUI() {
 }
 
 func (cfp *ContextFormPage) redraw(ctx *ds.Context) {
-	cfp.currUUID = ctx.UUID
-	if cfp.currUUID != "" {
+	cfp.currName = ctx.Name
+	if cfp.currName != "" {
 		cfp.form.GetFormItemByLabel("Name").(*tview.InputField).SetText(ctx.Name)
-		cfp.form.GetFormItemByLabel("URL").(*tview.InputField).SetText(ctx.URL)
+		cfp.form.GetFormItemByLabel("URL").(*tview.InputField).SetText(ctx.CtxData.URL)
 	} else {
 		cfp.form.GetFormItemByLabel("Name").(*tview.InputField).SetText("")
 		cfp.form.GetFormItemByLabel("URL").(*tview.InputField).SetText("nats://")
@@ -94,8 +93,7 @@ func (cfp *ContextFormPage) saveContext() {
 	errTxt := cfp.form.GetFormItem(2).(*tview.TextView)
 	errTxt.SetText("Connecting to server...")
 
-	uuid := uuid.New().String()
-	newCtx := ds.Context{UUID: uuid, Name: name, URL: url}
+	newCtx := ds.Context{ Name: name, CtxData: ds.NatsCliContext{URL: url}}
 
 	go func() {
 		err := natsutil.TestConnect(url)
@@ -104,11 +102,11 @@ func (cfp *ContextFormPage) saveContext() {
 			return
 		}
 
-		if cfp.currUUID != "" {
+		if cfp.currName != "" {
 			for i := range cfp.Data.Contexts {
-				if cfp.Data.Contexts[i].UUID == cfp.currUUID {
+				if cfp.Data.Contexts[i].Name == cfp.currName {
 					cfp.Data.Contexts[i].Name = name
-					cfp.Data.Contexts[i].URL = url
+					cfp.Data.Contexts[i].CtxData.URL = url
 					cfp.Data.CurrCtx = cfp.Data.Contexts[i]
 					break
 				}
