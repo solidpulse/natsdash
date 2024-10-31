@@ -1,9 +1,10 @@
 package main
 
 import (
-	"bufio"
+	"io"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/evnix/natsdash/ds"
 	"github.com/gdamore/tcell/v2"
@@ -120,21 +121,28 @@ func (cfp *NatsPage) resetTailFile(logFile *os.File) {
 
 	// Tail the log file and update the log view
 	go func() {
-		scanner := bufio.NewScanner(logFile)
-		for scanner.Scan() {
+		buf := make([]byte, 1024)
+		offset, _ := logFile.Seek(0, io.SeekEnd)
+		for {
 			select {
 			case <-cfp.tailingDone:
 				return
 			default:
-				cfp.app.QueueUpdateDraw(func() {
-					cfp.logView.Write([]byte(scanner.Text() + "\n"))
-				})
+				n, err := logFile.ReadAt(buf, offset)
+				if err != nil && err != io.EOF {
+					cfp.app.QueueUpdateDraw(func() {
+						cfp.logView.Write([]byte("Error reading log file: " + err.Error() + "\n"))
+					})
+					return
+				}
+				if n > 0 {
+					cfp.app.QueueUpdateDraw(func() {
+						cfp.logView.Write(buf[:n])
+					})
+					offset += int64(n)
+				}
+				time.Sleep(100 * time.Millisecond)
 			}
-		}
-		if err := scanner.Err(); err != nil {
-			cfp.app.QueueUpdateDraw(func() {
-				cfp.logView.Write([]byte("Error reading log file: " + err.Error() + "\n"))
-			})
 		}
 	}()
 }
