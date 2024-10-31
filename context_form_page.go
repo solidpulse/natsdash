@@ -132,8 +132,7 @@ func (cfp *ContextFormPage) saveContext() {
 			for i := range cfp.Data.Contexts {
 				if cfp.Data.Contexts[i].Name == cfp.currName {
 					cfp.Data.Contexts[i].Name = name
-					cfp.Data.Contexts[i].CtxData.URL = url
-					cfp.Data.CurrCtx = cfp.Data.Contexts[i]
+					cfp.Data.Contexts[i].CtxData = newCtx.CtxData
 					break
 				}
 			}

@@ -65,13 +65,9 @@ func GetConfigDir() (string, error) {
 
 // function to save ConfigData to multiple files in the users config directory
 func (configData *Data) SaveToFile() error {
-	//get user config directory
-	userConfigDir, err := os.UserConfigDir()
-	if err != nil {
-		return err
-	}
+
 	//create config directory if it doesn't exist
-	configDir := userConfigDir + "/natsdash"
+	configDir,_ := GetConfigDir()
 	if _, err := os.Stat(configDir); os.IsNotExist(err) {
 		err = os.Mkdir(configDir, 0755)
 		if err != nil {
