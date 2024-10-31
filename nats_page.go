@@ -87,8 +87,8 @@ func (cfp *NatsPage) goBackToContextPage() {
 	cfp.tailingMutex.Lock()
 	if cfp.tailingDone != nil {
 		close(cfp.tailingDone)
+		cfp.tailingDone = nil
 	}
-	cfp.tailingDone = nil
 	cfp.tailingMutex.Unlock()
 
 	pages.SwitchToPage("contexts")
