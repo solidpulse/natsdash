@@ -5,6 +5,7 @@ import (
 	"os"
 	"path"
 	"time"
+	"encoding/json"
 
 	"github.com/evnix/natsdash/ds"
 	"github.com/evnix/natsdash/natsutil"
@@ -47,6 +48,16 @@ func (cp *ContextPage) setupUI() {
 		SetHighlightFullLine(true)
 	ctxListBox.AddItem(cp.ctxListView, 0, 20, false)
 	cp.AddItem(ctxListBox, 0, 18, false)
+
+	// Read NATS CLI contexts
+	contexts, err := cp.readNatsCliContexts()
+	if err != nil {
+		cp.notify(fmt.Sprintf("Error reading NATS CLI contexts: %s", err.Error()), 5*time.Second)
+	} else {
+		for _, ctx := range contexts {
+			cp.ctxListView.AddItem(ctx.Description, ctx.URL, 0, nil)
+		}
+	}
 
 	// Footer setup
 	footer := tview.NewFlex()
@@ -143,6 +154,61 @@ func (cp *ContextPage) notify(message string, duration time.Duration) {
 		time.Sleep(duration)
 		cp.footer.SetText("")
 	}()
+}
+
+type NatsCliContext struct {
+	Description string `json:"description"`
+	URL         string `json:"url"`
+	Token       string `json:"token"`
+	User        string `json:"user"`
+	Password    string `json:"password"`
+	Creds       string `json:"creds"`
+	Nkey        string `json:"nkey"`
+	Cert        string `json:"cert"`
+	Key         string `json:"key"`
+	CA          string `json:"ca"`
+	NSC         string `json:"nsc"`
+	JetstreamDomain       string `json:"jetstream_domain"`
+	JetstreamAPIPrefix    string `json:"jetstream_api_prefix"`
+	JetstreamEventPrefix  string `json:"jetstream_event_prefix"`
+	InboxPrefix           string `json:"inbox_prefix"`
+	UserJWT               string `json:"user_jwt"`
+}
+
+func (cp *ContextPage) readNatsCliContexts() ([]NatsCliContext, error) {
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		return nil, err
+	}
+
+	contextDir := path.Join(configDir, "nats", "context")
+	files, err := os.ReadDir(contextDir)
+	if err != nil {
+		return nil, err
+	}
+
+	var contexts []NatsCliContext
+	for _, file := range files {
+		if file.IsDir() || path.Ext(file.Name()) != ".json" {
+			continue
+		}
+
+		filePath := path.Join(contextDir, file.Name())
+		fileContent, err := os.ReadFile(filePath)
+		if err != nil {
+			return nil, err
+		}
+
+		var context NatsCliContext
+		err = json.Unmarshal(fileContent, &context)
+		if err != nil {
+			return nil, err
+		}
+
+		contexts = append(contexts, context)
+	}
+
+	return contexts, nil
 }
 
 func (cp *ContextPage) Redraw() {
