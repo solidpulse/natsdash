@@ -46,6 +46,13 @@ func (cfp *NatsPage) setupUI() {
 	cfp.subjectFilter.SetLabel("Filter Subjects: ")
 	cfp.subjectFilter.SetBorder(true)
 	cfp.subjectFilter.SetBorderPadding(0, 0, 1, 1)
+	cfp.subjectFilter.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyTab {
+			cfp.app.SetFocus(cfp.subjectName)
+			return nil
+		}
+		return event
+	})
 	cfp.AddItem(cfp.subjectFilter, 0, 6, false)
 
 	cfp.logView = tview.NewTextView()
@@ -61,6 +68,16 @@ func (cfp *NatsPage) setupUI() {
 	cfp.txtArea = tview.NewTextArea()
 	cfp.txtArea.SetPlaceholder("Message...")
 	cfp.txtArea.SetBorder(true)
+	cfp.txtArea.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyF5 {
+			cfp.sendMessage()
+			return nil
+		} else if event.Key() == tcell.KeyEnter && event.Modifiers() == tcell.ModAlt {
+			cfp.sendMessage()
+			return nil
+		}
+		return event
+	})
 	cfp.AddItem(cfp.txtArea, 0, 8, false)
 	cfp.SetBorderPadding(0, 0, 1, 1)
 }
@@ -69,6 +86,7 @@ func (cfp *NatsPage) redraw(ctx *ds.Context) {
 	// Update log view title with the current context's log file path
 	cfp.logView.SetTitle(ctx.LogFilePath)
 	cfp.resetTailFile(ctx.LogFilePath)
+	cfp.app.SetFocus(cfp.subjectFilter)
 	go cfp.app.Draw()
 }
 
@@ -77,9 +95,6 @@ func (cfp *NatsPage) setupInputCapture() {
 		switch {
 		case event.Key() == tcell.KeyEsc:
 			cfp.goBackToContextPage()
-			return nil
-		case event.Key() == tcell.KeyEnter && event.Modifiers() == tcell.ModCtrl:
-			cfp.sendMessage()
 			return nil
 		}
 		return event
@@ -112,7 +127,7 @@ func createNatsPageHeaderRow() *tview.Flex {
 	headerRow1.SetDirection(tview.FlexRow)
 	headerRow1.SetBorder(false)
 
-	headerRow1.AddItem(createTextView("[Esc] Back  | [ctrl+Enter] Send | [F2] Filter | [F3] Subject | [F4] Body", tcell.ColorWhite), 0, 1, false)
+	headerRow1.AddItem(createTextView("[Esc] Back  | [Alt+Enter] Send | [F2] Filter | [F3] Subject | [F4] Body", tcell.ColorWhite), 0, 1, false)
 
 	headerRow.AddItem(headerRow1, 0, 1, false)
 	headerRow.SetTitle("NATS-DASH")
@@ -151,6 +166,9 @@ func (cfp *NatsPage) resetTailFile(logFilePath string) {
 			case <-cfp.tailingDone:
 				return
 			default:
+				if cfp.tailingDone == nil {
+					return
+				}
 				n, err := logFile.ReadAt(buf, offset)
 				if err != nil && err != io.EOF {
 					cfp.app.QueueUpdateDraw(func() {
