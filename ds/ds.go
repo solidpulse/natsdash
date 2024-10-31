@@ -67,14 +67,11 @@ func GetConfigDir() (string, error) {
 func (configData *Data) SaveToFile() error {
 
 	//create config directory if it doesn't exist
-	configDir,_ := GetConfigDir()
-	if _, err := os.Stat(configDir); os.IsNotExist(err) {
-		err = os.Mkdir(configDir, 0755)
-		if err != nil {
-			return err
-		}
+	configDir, err := GetConfigDir()
+	if err != nil {
+		return err
 	}
-
+	
 	// Save each context to a separate file
 	for _, context := range configData.Contexts {
 		filePath := filepath.Join(configDir, context.Name+".json")
