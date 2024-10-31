@@ -1,11 +1,12 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path"
+	"strings"
 	"time"
-	"encoding/json"
 
 	"github.com/evnix/natsdash/ds"
 	"github.com/evnix/natsdash/natsutil"
@@ -63,6 +64,7 @@ func (cp *ContextPage) setupUI() {
 	if err != nil {
 		cp.notify(fmt.Sprintf("Error reading NATS CLI contexts: %s", err.Error()), 5*time.Second, "error")
 	} else {
+		cp.Data.Contexts = contexts
 		for _, ctx := range contexts {
 			cp.ctxListView.AddItem(ctx.Name, "", 0, nil)
 		}
@@ -109,10 +111,10 @@ func (cp *ContextPage) setupInputCapture() {
 		} else if event.Rune() == 'n' || event.Rune() == 'N' {
 			idx := cp.ctxListView.GetCurrentItem()
 			if len(cp.Data.Contexts) == 0 {
+				cp.notify("No contexts available", 5*time.Second, "error")
 				return event
 			}
 			data.CurrCtx = cp.Data.Contexts[idx]
-
 
 			// Connect to NATS
 			go func() {
@@ -197,11 +199,14 @@ func (cp *ContextPage) readNatsCliContexts() ([]ds.Context, error) {
 			return nil, err
 		}
 
-		var context ds.Context
-		err = json.Unmarshal(fileContent, &context)
+		var contextData ds.NatsCliContext
+		err = json.Unmarshal(fileContent, &contextData)
 		if err != nil {
 			return nil, err
 		}
+		var context ds.Context
+		context.CtxData = contextData
+		context.Name = strings.TrimSuffix(file.Name(), ".json")
 
 		contexts = append(contexts, context)
 	}

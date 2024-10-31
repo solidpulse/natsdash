@@ -56,6 +56,7 @@ func (cfp *NatsPage) setupUI() {
 	// })
 	cfp.subjectFilter.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyTab {
+			cfp.subscribeToSubject(cfp.subjectFilter.GetText())
 			cfp.app.SetFocus(cfp.logView)
 			return nil
 		}
@@ -219,6 +220,12 @@ func (cfp *NatsPage) resetTailFile(logFilePath string) {
 
 func (cfp *NatsPage) subscribeToSubject(subject string) {
 	hourMinSec := time.Now().Format("15:04:05")
+
+	// check if subject is already subscribed
+	if cfp.Data.CurrCtx.CoreNatsSub != nil && cfp.Data.CurrCtx.CoreNatsSub.Subject == subject {
+		return
+	}
+
     // Unsubscribe from the previous subject if any
     if cfp.Data.CurrCtx.CoreNatsSub != nil {
         cfp.Data.CurrCtx.CoreNatsSub.Unsubscribe()
