@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/evnix/natsdash/ds"
 	"github.com/rivo/tview"
+	_ "github.com/evnix/natsdash/logger"
 )
 
 var app *tview.Application
