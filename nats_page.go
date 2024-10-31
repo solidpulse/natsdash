@@ -136,6 +136,9 @@ func (cfp *NatsPage) resetTailFile(logFile *os.File) {
 			case <-cfp.tailingDone:
 				return
 			default:
+				if cfp.tailingDone == nil {
+					return
+				}
 				n, err := logFile.ReadAt(buf, offset)
 				if err != nil && err != io.EOF {
 					cfp.app.QueueUpdateDraw(func() {
