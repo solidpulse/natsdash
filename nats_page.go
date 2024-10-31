@@ -14,11 +14,13 @@ import (
 type NatsPage struct {
 	*tview.Flex
 	Data *ds.Data
+	app  *tview.Application // Add this line
 }
 
-func NewNatsPage(data *ds.Data) *NatsPage {
+func NewNatsPage(app *tview.Application, data *ds.Data) *NatsPage {
 	cfp := &NatsPage{
 		Flex: tview.NewFlex().SetDirection(tview.FlexRow),
+		app:  app, // Add this line
 	}
 	cfp.Data = data
 	cfp.setupUI()
@@ -95,6 +97,7 @@ func (cfp *NatsPage) goBackToContextPage() {
 	pages.SwitchToPage("contexts")
 	_, b := pages.GetFrontPage()
 	b.(*ContextPage).Redraw()
+	cfp.app.SetFocus(b) // Add this line
 }
 
 func createNatsPageHeaderRow() *tview.Flex {

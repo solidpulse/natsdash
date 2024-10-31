@@ -10,11 +10,13 @@ type ServerInfoPage struct {
 	*tview.Flex
 	Data *ds.Data
 	form *tview.Form
+	app  *tview.Application // Add this line
 }
 
-func NewServerInfoPage(data *ds.Data) *ServerInfoPage {
+func NewServerInfoPage(app *tview.Application, data *ds.Data) *ServerInfoPage {
 	cfp := &ServerInfoPage{
 		Flex: tview.NewFlex().SetDirection(tview.FlexRow),
+		app:  app, // Add this line
 	}
 	cfp.Data = data
 	cfp.setupUI()
@@ -79,6 +81,7 @@ func (cfp *ServerInfoPage) goBackToContextPage() {
 	pages.SwitchToPage("contexts")
 	_, b := pages.GetFrontPage()
 	b.(*ContextPage).Redraw()
+	cfp.app.SetFocus(b) // Add this line
 }
 
 func createServerInfoHeaderRow() *tview.Flex {

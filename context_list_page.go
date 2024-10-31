@@ -10,11 +10,13 @@ type ContextPage struct {
 	*tview.Flex
 	Data        *ds.Data
 	ctxListView *tview.List
+	app         *tview.Application // Add this line
 }
 
-func NewContextPage(data *ds.Data) *ContextPage {
+func NewContextPage(app *tview.Application, data *ds.Data) *ContextPage {
 	cp := &ContextPage{
 		Flex: tview.NewFlex().SetDirection(tview.FlexRow),
+		app:  app, // Add this line
 	}
 
 	cp.Data = data
@@ -47,13 +49,13 @@ func (cp *ContextPage) setupUI() {
 }
 
 func (cp *ContextPage) setupInputCapture() {
-	cp.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	cp.SetInputCapture(func(event *tcell.EventKey) *tview.EventKey {
 		switch event.Key() {
 		case tcell.KeyESC:
-			app.Stop()
+			cp.app.Stop() // Add this line
 			return nil
 		case tcell.KeyUp, tcell.KeyDown:
-			app.SetFocus(cp.ctxListView)
+			cp.app.SetFocus(cp.ctxListView) // Add this line
 		case tcell.KeyDelete:
 			idx := cp.ctxListView.GetCurrentItem()
 			//remove from contexts

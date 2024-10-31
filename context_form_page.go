@@ -13,11 +13,13 @@ type ContextFormPage struct {
 	Data     *ds.Data
 	form     *tview.Form
 	currUUID string
+	app      *tview.Application // Add this line
 }
 
-func NewContextFormPage(data *ds.Data) *ContextFormPage {
+func NewContextFormPage(app *tview.Application, data *ds.Data) *ContextFormPage {
 	cfp := &ContextFormPage{
 		Flex: tview.NewFlex().SetDirection(tview.FlexRow),
+		app:  app, // Add this line
 	}
 
 	cfp.Data = data
