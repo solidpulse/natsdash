@@ -105,7 +105,7 @@ func (cp *ContextPage) setupInputCapture() {
 			go func() {
 				conn, err := natsutil.Connect(data.CurrCtx.URL)
 				if err != nil {
-					// Handle error
+					cp.notify(fmt.Sprintf("Error connecting to NATS: %s", err.Error()), 5*time.Second)
 					return
 				}
 				data.CurrCtx.Conn = conn
@@ -114,7 +114,7 @@ func (cp *ContextPage) setupInputCapture() {
 				logFilePath := path.Join(os.TempDir(), "natsdash", fmt.Sprintf("%s.log", data.CurrCtx.UUID))
 				logFile, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 				if err != nil {
-					// Handle error
+					cp.notify(fmt.Sprintf("Error opening log file: %s", err.Error()), 5*time.Second)
 					return
 				}
 				data.CurrCtx.LogFilePath = logFilePath
@@ -123,6 +123,14 @@ func (cp *ContextPage) setupInputCapture() {
 		}
 		return event
 	})
+}
+
+func (cp *ContextPage) notify(message string, duration time.Duration) {
+	cp.footer.SetText(message)
+	go func() {
+		time.Sleep(duration)
+		cp.footer.SetText("")
+	}()
 }
 
 func (cp *ContextPage) Redraw() {
