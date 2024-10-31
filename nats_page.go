@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"os"
+	"sync"
 
 	"github.com/evnix/natsdash/ds"
 	"github.com/gdamore/tcell/v2"

@@ -114,7 +114,8 @@ func (cp *ContextPage) setupInputCapture() {
 				// Open log file
 				currentTime := time.Now().Format("2006-01-02")
 				logFilePath := path.Join(os.TempDir(), "natsdash", fmt.Sprintf("%s_%s.log", currentTime, data.CurrCtx.UUID[:4]))
-				logFile, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+				data.CurrCtx.LogFilePath = logFilePath
+				logFile, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0777)
 				if err != nil {
 					cp.notify(fmt.Sprintf("Error opening log file: %s", err.Error()), 5*time.Second)
 					return
