@@ -18,8 +18,6 @@ func main() {
 
 	data = &ds.Data{}
 	data.Contexts = make([]ds.Context, 0)
-	configDir, _ := ds.GetConfigDir()
-	data.LoadFromDir(configDir)
 	contextPage := NewContextPage(app,data)
 	contextFormPage := NewContextFormPage(app, data)
 	ServerInfoPage := NewServerInfoPage(app, data)

@@ -1,11 +1,10 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"path"
-	"strings"
 	"time"
 
 	"github.com/evnix/natsdash/ds"
@@ -48,30 +47,29 @@ func (cp *ContextPage) setupUI() {
 		ShowSecondaryText(false).
 		SetHighlightFullLine(true)
 	ctxListBox.AddItem(cp.ctxListView, 0, 20, false)
+	ctxListBox.SetBorderPadding(0, 0, 1, 1)
 	cp.AddItem(ctxListBox, 0, 18, false)
 
 
 	// Footer setup
 	footer := tview.NewFlex()
 	footer.SetBorder(true)
+	footer.SetDirection(tview.FlexRow)
 	footer.SetBorderPadding(0, 0, 1, 1)
 	cp.footerTxt = createTextView("Primary Author: Avinash D'Silva | contact: dsilva.avinash@outlook.com", tcell.ColorWhite)
 	footer.AddItem(cp.footerTxt, 0, 1, false)
-	cp.AddItem(footer, 0, 2, false)
+	cp.AddItem(footer, 3, 2, false)
 	cp.SetBorderPadding(1, 0, 1, 1)
 	// Read NATS CLI contexts
-	contexts, err := cp.readNatsCliContexts()
-	if err != nil {
-		cp.notify(fmt.Sprintf("Error reading NATS CLI contexts: %s", err.Error()), 5*time.Second, "error")
-	} else {
-		cp.Data.Contexts = contexts
-		for _, ctx := range contexts {
-			cp.ctxListView.AddItem(ctx.Name, "", 0, nil)
-		}
+	cp.reloadNatsCliContexts()
+	contexts := cp.Data.Contexts
+	cp.Data.Contexts = contexts
+	log.Printf("Contexts to be added: %s", (contexts))
+	for _, ctx := range contexts {
+		log.Printf("Adding context in list %s", ctx.Name)
+		cp.ctxListView.AddItem(ctx.Name, "", 0, nil)
 	}
-
-
-
+	
 }
 
 func (cp *ContextPage) setupInputCapture() {
@@ -166,52 +164,9 @@ func (cp *ContextPage) notify(message string, duration time.Duration, logLevel s
 
 
 
-func (cp *ContextPage) readNatsCliContexts() ([]ds.Context, error) {
-	configDir, err := os.UserConfigDir()
-	if err != nil {
-		return nil, err
-	}
-
-	contextDir := path.Join(configDir, "nats", "context")
-
-	// Check if the directory exists, if not, create it
-	if _, err := os.Stat(contextDir); os.IsNotExist(err) {
-		err = os.MkdirAll(contextDir, 0755)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	files, err := os.ReadDir(contextDir)
-	if err != nil {
-		return nil, err
-	}
-
-	var contexts []ds.Context
-	for _, file := range files {
-		if file.IsDir() || path.Ext(file.Name()) != ".json" {
-			continue
-		}
-
-		filePath := path.Join(contextDir, file.Name())
-		fileContent, err := os.ReadFile(filePath)
-		if err != nil {
-			return nil, err
-		}
-
-		var contextData ds.NatsCliContext
-		err = json.Unmarshal(fileContent, &contextData)
-		if err != nil {
-			return nil, err
-		}
-		var context ds.Context
-		context.CtxData = contextData
-		context.Name = strings.TrimSuffix(file.Name(), ".json")
-
-		contexts = append(contexts, context)
-	}
-
-	return contexts, nil
+func (cp *ContextPage) reloadNatsCliContexts()  {
+	configDir, _ := ds.GetConfigDir()
+	data.LoadFromDir(configDir)
 }
 
 func (cp *ContextPage) Redraw() {

@@ -4,12 +4,11 @@ import (
 	"encoding/json"
 	"os"
 
-	"github.com/nats-io/nats.go"
-)
-
-import (
 	"path/filepath"
 	"strings"
+
+	"github.com/evnix/natsdash/logger"
+	"github.com/nats-io/nats.go"
 )
 
 type Data struct {
@@ -88,9 +87,9 @@ func (configData *Data) SaveToFile() error {
 			logger.Error("Failed to encode context data to file %s: %v", filePath, err) // Add this line
 			return err
 		}
+		logger.Info("Successfully saved context data to file %s", filePath) // Add this line
 	}
 
-	logger.Error("Successfully saved context data to files") // Add this line
 	return nil
 }
 
@@ -117,6 +116,7 @@ func (data *Data) LoadFromDir(dirPath string) error {
 		if !file.IsDir() && strings.HasSuffix(file.Name(), ".json") {
 			// Open the file
 			filePath := filepath.Join(dirPath, file.Name())
+			logger.Info("Loading context data from file %s", filePath) // Add this line
 			file, err := os.Open(filePath)
 			if err != nil {
 				return err
@@ -131,8 +131,9 @@ func (data *Data) LoadFromDir(dirPath string) error {
 			}
 
 			// Create a new Context with the filename as the Name and the unmarshaled data
+			ctxName := strings.Split(strings.TrimSuffix(file.Name(), ".json"), string(filepath.Separator))
 			context := Context{
-				Name:    strings.TrimSuffix(file.Name(), ".json"),
+				Name:    ctxName[len(ctxName)-1],
 				CtxData: ctx,
 			}
 
@@ -140,6 +141,7 @@ func (data *Data) LoadFromDir(dirPath string) error {
 			data.Contexts = append(data.Contexts, context)
 		}
 	}
+	logger.Debug("Loaded %d contexts %s", len(data.Contexts), data.Contexts)
 
 	return nil
 }
