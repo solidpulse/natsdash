@@ -77,7 +77,6 @@ func (cfp *ContextFormPage) redraw(ctx *ds.Context) {
 		cfp.form.GetFormItemByLabel("Jetstream API Prefix").(*tview.InputField).SetText(ctx.CtxData.JetstreamAPIPrefix)
 		cfp.form.GetFormItemByLabel("Jetstream Event Prefix").(*tview.InputField).SetText(ctx.CtxData.JetstreamEventPrefix)
 		cfp.form.GetFormItemByLabel("Inbox Prefix").(*tview.InputField).SetText(ctx.CtxData.InboxPrefix)
-		cfp.form.GetFormItemByLabel("User JWT").(*tview.InputField).SetText(ctx.CtxData.UserJWT)
 	} else {
 		cfp.form.GetFormItemByLabel("Name").(*tview.InputField).SetText("")
 		cfp.form.GetFormItemByLabel("Description").(*tview.InputField).SetText("")
@@ -95,7 +94,6 @@ func (cfp *ContextFormPage) redraw(ctx *ds.Context) {
 		cfp.form.GetFormItemByLabel("Jetstream API Prefix").(*tview.InputField).SetText("")
 		cfp.form.GetFormItemByLabel("Jetstream Event Prefix").(*tview.InputField).SetText("")
 		cfp.form.GetFormItemByLabel("Inbox Prefix").(*tview.InputField).SetText("")
-		cfp.form.GetFormItemByLabel("User JWT").(*tview.InputField).SetText("")
 	}
 	errTxt := cfp.form.GetFormItem(2).(*tview.TextView)
 	errTxt.SetText("")
@@ -148,7 +146,22 @@ func (cfp *ContextFormPage) saveContext() {
 
 func (cfp *ContextFormPage) cancelForm() {
 	cfp.form.GetFormItemByLabel("Name").(*tview.InputField).SetText("")
-	cfp.form.GetFormItemByLabel("URL").(*tview.InputField).SetText("")
+	cfp.form.GetFormItemByLabel("Description").(*tview.InputField).SetText("")
+	cfp.form.GetFormItemByLabel("URL").(*tview.InputField).SetText("nats://")
+	cfp.form.GetFormItemByLabel("Token").(*tview.InputField).SetText("")
+	cfp.form.GetFormItemByLabel("User").(*tview.InputField).SetText("")
+	cfp.form.GetFormItemByLabel("Password").(*tview.InputField).SetText("")
+	cfp.form.GetFormItemByLabel("Creds").(*tview.InputField).SetText("")
+	cfp.form.GetFormItemByLabel("Nkey").(*tview.InputField).SetText("")
+	cfp.form.GetFormItemByLabel("Cert").(*tview.InputField).SetText("")
+	cfp.form.GetFormItemByLabel("Key").(*tview.InputField).SetText("")
+	cfp.form.GetFormItemByLabel("CA").(*tview.InputField).SetText("")
+	cfp.form.GetFormItemByLabel("NSC").(*tview.InputField).SetText("")
+	cfp.form.GetFormItemByLabel("Jetstream Domain").(*tview.InputField).SetText("")
+	cfp.form.GetFormItemByLabel("Jetstream API Prefix").(*tview.InputField).SetText("")
+	cfp.form.GetFormItemByLabel("Jetstream Event Prefix").(*tview.InputField).SetText("")
+	cfp.form.GetFormItemByLabel("Inbox Prefix").(*tview.InputField).SetText("")
+
 	cfp.goBackToContextPage()
 }
 
