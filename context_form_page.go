@@ -46,14 +46,8 @@ func (cfp *ContextFormPage) setupUI() {
 	cfp.AddItem(headerRow, 0, 4, false)
 
 	// Form setup
-	cfp.form = tview.NewForm()
-	cfp.form.SetTitle("Add Context").
-		SetBorder(true)
-	cfp.form.
-		AddInputField("Name", "", 0, nil, nil).
-		AddInputField("URL", "nats://", 0, nil, nil).
-		AddTextView("", "", 0, 1, false, false).
-		AddButton("Save", cfp.saveContext).
+	cfp.form = createContextForm(&cfp.Data.CurrCtx.CtxData)
+	cfp.form.AddButton("Save", cfp.saveContext).
 		AddButton("Cancel", cfp.cancelForm)
 	cfp.AddItem(cfp.form, 0, 18, true)
 
@@ -67,11 +61,39 @@ func (cfp *ContextFormPage) setupUI() {
 func (cfp *ContextFormPage) redraw(ctx *ds.Context) {
 	cfp.currName = ctx.Name
 	if cfp.currName != "" {
-		cfp.form.GetFormItemByLabel("Name").(*tview.InputField).SetText(ctx.Name)
+		cfp.form.GetFormItemByLabel("Description").(*tview.InputField).SetText(ctx.CtxData.Description)
 		cfp.form.GetFormItemByLabel("URL").(*tview.InputField).SetText(ctx.CtxData.URL)
+		cfp.form.GetFormItemByLabel("Token").(*tview.InputField).SetText(ctx.CtxData.Token)
+		cfp.form.GetFormItemByLabel("User").(*tview.InputField).SetText(ctx.CtxData.User)
+		cfp.form.GetFormItemByLabel("Password").(*tview.InputField).SetText(ctx.CtxData.Password)
+		cfp.form.GetFormItemByLabel("Creds").(*tview.InputField).SetText(ctx.CtxData.Creds)
+		cfp.form.GetFormItemByLabel("Nkey").(*tview.InputField).SetText(ctx.CtxData.Nkey)
+		cfp.form.GetFormItemByLabel("Cert").(*tview.InputField).SetText(ctx.CtxData.Cert)
+		cfp.form.GetFormItemByLabel("Key").(*tview.InputField).SetText(ctx.CtxData.Key)
+		cfp.form.GetFormItemByLabel("CA").(*tview.InputField).SetText(ctx.CtxData.CA)
+		cfp.form.GetFormItemByLabel("NSC").(*tview.InputField).SetText(ctx.CtxData.NSC)
+		cfp.form.GetFormItemByLabel("Jetstream Domain").(*tview.InputField).SetText(ctx.CtxData.JetstreamDomain)
+		cfp.form.GetFormItemByLabel("Jetstream API Prefix").(*tview.InputField).SetText(ctx.CtxData.JetstreamAPIPrefix)
+		cfp.form.GetFormItemByLabel("Jetstream Event Prefix").(*tview.InputField).SetText(ctx.CtxData.JetstreamEventPrefix)
+		cfp.form.GetFormItemByLabel("Inbox Prefix").(*tview.InputField).SetText(ctx.CtxData.InboxPrefix)
+		cfp.form.GetFormItemByLabel("User JWT").(*tview.InputField).SetText(ctx.CtxData.UserJWT)
 	} else {
-		cfp.form.GetFormItemByLabel("Name").(*tview.InputField).SetText("")
+		cfp.form.GetFormItemByLabel("Description").(*tview.InputField).SetText("")
 		cfp.form.GetFormItemByLabel("URL").(*tview.InputField).SetText("nats://")
+		cfp.form.GetFormItemByLabel("Token").(*tview.InputField).SetText("")
+		cfp.form.GetFormItemByLabel("User").(*tview.InputField).SetText("")
+		cfp.form.GetFormItemByLabel("Password").(*tview.InputField).SetText("")
+		cfp.form.GetFormItemByLabel("Creds").(*tview.InputField).SetText("")
+		cfp.form.GetFormItemByLabel("Nkey").(*tview.InputField).SetText("")
+		cfp.form.GetFormItemByLabel("Cert").(*tview.InputField).SetText("")
+		cfp.form.GetFormItemByLabel("Key").(*tview.InputField).SetText("")
+		cfp.form.GetFormItemByLabel("CA").(*tview.InputField).SetText("")
+		cfp.form.GetFormItemByLabel("NSC").(*tview.InputField).SetText("")
+		cfp.form.GetFormItemByLabel("Jetstream Domain").(*tview.InputField).SetText("")
+		cfp.form.GetFormItemByLabel("Jetstream API Prefix").(*tview.InputField).SetText("")
+		cfp.form.GetFormItemByLabel("Jetstream Event Prefix").(*tview.InputField).SetText("")
+		cfp.form.GetFormItemByLabel("Inbox Prefix").(*tview.InputField).SetText("")
+		cfp.form.GetFormItemByLabel("User JWT").(*tview.InputField).SetText("")
 	}
 	errTxt := cfp.form.GetFormItem(2).(*tview.TextView)
 	errTxt.SetText("")
