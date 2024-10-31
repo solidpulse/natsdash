@@ -55,10 +55,7 @@ func (cfp *NatsPage) setupUI() {
 	// 	return event
 	// })
 	cfp.subjectFilter.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyTab && event.Modifiers() == tcell.ModShift {
-			cfp.app.SetFocus(cfp.logView)
-			return nil
-		} else if event.Key() == tcell.KeyTab {
+		if event.Key() == tcell.KeyTab {
 			cfp.app.SetFocus(cfp.subjectName)
 			return nil
 		}
@@ -74,10 +71,7 @@ func (cfp *NatsPage) setupUI() {
 	cfp.logView.SetTitle(cfp.Data.CurrCtx.LogFilePath)
 	cfp.logView.SetBorder(true)
 	cfp.logView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyTab && event.Modifiers() == tcell.ModShift {
-			cfp.app.SetFocus(cfp.subjectFilter)
-			return nil
-		} else if event.Key() == tcell.KeyTab {
+		if event.Key() == tcell.KeyTab {
 			cfp.app.SetFocus(cfp.subjectName)
 			return nil
 		}
@@ -92,10 +86,7 @@ func (cfp *NatsPage) setupUI() {
 		cfp.app.SetFocus(cfp.txtArea)
 	})
 	cfp.subjectName.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyTab && event.Modifiers() == tcell.ModShift {
-			cfp.app.SetFocus(cfp.logView)
-			return nil
-		} else if event.Key() == tcell.KeyTab {
+		if event.Key() == tcell.KeyTab {
 			cfp.app.SetFocus(cfp.txtArea)
 			return nil
 		}
@@ -107,10 +98,7 @@ func (cfp *NatsPage) setupUI() {
 	cfp.txtArea.SetPlaceholder("Message...")
 	cfp.txtArea.SetBorder(true)
 	cfp.txtArea.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyTab && event.Modifiers() == tcell.ModShift {
-			cfp.app.SetFocus(cfp.subjectName)
-			return nil
-		} else if event.Key() == tcell.KeyTab {
+		if event.Key() == tcell.KeyTab {
 			cfp.app.SetFocus(cfp.subjectFilter)
 			return nil
 		} else if event.Key() == tcell.KeyEnter && event.Modifiers() == tcell.ModAlt {
