@@ -36,12 +36,10 @@ func (cfp *NatsPage) setupUI() {
 	subjectFilter := tview.NewInputField()
 	subjectFilter.SetLabel("Filter Subjects: ")
 	subjectFilter.SetBorder(true)
+	subjectFilter.SetBorderPadding(0, 0, 1, 1)
 	cfp.AddItem(subjectFilter, 0, 6, false)
 	logView := tview.NewTextView()
-
 	logFilePath := path.Join(os.TempDir(), "natsdash", fmt.Sprintf("%s.log", time.Now().Format("20060102-150405")))
-	cfp.AddItem(logView, 1, 6, true)
-
 	logView.SetTitle(logFilePath)
 	logView.SetBorder(true)
 	cfp.AddItem(logView, 0, 50, false)
