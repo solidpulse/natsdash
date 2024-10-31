@@ -117,9 +117,43 @@ func (cfp *ContextFormPage) setupInputCapture() {
 func (cfp *ContextFormPage) saveContext() {
 	name := cfp.form.GetFormItemByLabel("Name").(*tview.InputField).GetText()
 	url := cfp.form.GetFormItemByLabel("URL").(*tview.InputField).GetText()
+	description := cfp.form.GetFormItemByLabel("Description").(*tview.InputField).GetText()
+	token := cfp.form.GetFormItemByLabel("Token").(*tview.InputField).GetText()
+	user := cfp.form.GetFormItemByLabel("User").(*tview.InputField).GetText()
+	password := cfp.form.GetFormItemByLabel("Password").(*tview.InputField).GetText()
+	creds := cfp.form.GetFormItemByLabel("Creds").(*tview.InputField).GetText()
+	nkey := cfp.form.GetFormItemByLabel("Nkey").(*tview.InputField).GetText()
+	cert := cfp.form.GetFormItemByLabel("Cert").(*tview.InputField).GetText()
+	key := cfp.form.GetFormItemByLabel("Key").(*tview.InputField).GetText()
+	ca := cfp.form.GetFormItemByLabel("CA").(*tview.InputField).GetText()
+	nsc := cfp.form.GetFormItemByLabel("NSC").(*tview.InputField).GetText()
+	jetstreamDomain := cfp.form.GetFormItemByLabel("Jetstream Domain").(*tview.InputField).GetText()
+	jetstreamAPIPrefix := cfp.form.GetFormItemByLabel("Jetstream API Prefix").(*tview.InputField).GetText()
+	jetstreamEventPrefix := cfp.form.GetFormItemByLabel("Jetstream Event Prefix").(*tview.InputField).GetText()
+	inboxPrefix := cfp.form.GetFormItemByLabel("Inbox Prefix").(*tview.InputField).GetText()
+
 	cfp.notify("Connecting to server...", 30*time.Second, "info")
 
-	newCtx := ds.Context{ Name: name, CtxData: ds.NatsCliContext{URL: url}}
+	newCtx := ds.Context{
+		Name: name,
+		CtxData: ds.NatsCliContext{
+			Description:          description,
+			URL:                  url,
+			Token:                token,
+			User:                 user,
+			Password:             password,
+			Creds:                creds,
+			Nkey:                 nkey,
+			Cert:                 cert,
+			Key:                  key,
+			CA:                   ca,
+			NSC:                  nsc,
+			JetstreamDomain:      jetstreamDomain,
+			JetstreamAPIPrefix:   jetstreamAPIPrefix,
+			JetstreamEventPrefix: jetstreamEventPrefix,
+			InboxPrefix:          inboxPrefix,
+		},
+	}
 
 	go func() {
 		err := natsutil.TestConnect(url)
@@ -144,7 +178,6 @@ func (cfp *ContextFormPage) saveContext() {
 		cfp.Data.SaveToFile()
 		cfp.goBackToContextPage()
 	}()
-
 }
 
 func (cfp *ContextFormPage) cancelForm() {
