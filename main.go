@@ -19,9 +19,13 @@ func main() {
 	contextPage := NewContextPage(data)
 	contextPage.Redraw()
 	contextFormPage := NewContextFormPage(data)
+	ServerInfoPage := NewServerInfoPage(data)
+	natsPage := NewNatsPage(data)
 
-	pages.AddPage("contexts", contextPage, true, true)
+	pages.AddPage("natsPage", natsPage, true, false)
 	pages.AddPage("contextFormPage", contextFormPage, true, false)
+	pages.AddPage("serverInfoPage", ServerInfoPage, true, false)
+	pages.AddPage("contexts", contextPage, true, true)
 
 	if err := app.SetRoot(pages, true).EnableMouse(true).Run(); err != nil {
 		panic(err)

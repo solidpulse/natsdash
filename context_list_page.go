@@ -27,7 +27,7 @@ func NewContextPage(data *ds.Data) *ContextPage {
 
 func (cp *ContextPage) setupUI() {
 	// Header setup
-	headerRow := createHeaderRow()
+	headerRow := createContexListHeaderRow()
 	cp.AddItem(headerRow, 0, 4, false)
 
 	// Context list setup
@@ -74,7 +74,18 @@ func (cp *ContextPage) setupInputCapture() {
 			pages.SwitchToPage("contextFormPage")
 			_, b := pages.GetFrontPage()
 			b.(*ContextFormPage).redraw(&data.CurrCtx)
-
+		} else if event.Rune() == 'i' || event.Rune() == 'I' {
+			idx := cp.ctxListView.GetCurrentItem()
+			data.CurrCtx = cp.Data.Contexts[idx]
+			pages.SwitchToPage("serverInfoPage")
+			_, b := pages.GetFrontPage()
+			b.(*ServerInfoPage).redraw(&data.CurrCtx)
+		} else if event.Rune() == 'n' || event.Rune() == 'N' {
+			idx := cp.ctxListView.GetCurrentItem()
+			data.CurrCtx = cp.Data.Contexts[idx]
+			pages.SwitchToPage("natsPage")
+			_, b := pages.GetFrontPage()
+			b.(*NatsPage).redraw(&data.CurrCtx)
 		}
 		return event
 	})
@@ -85,4 +96,35 @@ func (cp *ContextPage) Redraw() {
 	for _, ctx := range cp.Data.Contexts {
 		cp.ctxListView.AddItem(ctx.Name, "", 0, nil)
 	}
+}
+
+func createContexListHeaderRow() *tview.Flex {
+	headerRow := tview.NewFlex()
+	headerRow.SetBorder(false)
+	headerRow.
+		SetDirection(tview.FlexColumn).
+		SetBorderPadding(1, 0, 1, 1)
+
+	headerRow1 := tview.NewFlex()
+	headerRow1.SetDirection(tview.FlexRow)
+	headerRow1.SetBorder(false)
+
+	headerRow1.AddItem(createColoredTextView("[white:green] NATS [yellow:white] DASH ", tcell.ColorWhite), 0, 1, false)
+	headerRow1.AddItem(createTextView("[a] Add", tcell.ColorWhite), 0, 1, false)
+	headerRow1.AddItem(createTextView("[e] Edit", tcell.ColorWhite), 0, 1, false)
+
+	headerRow2 := tview.NewFlex()
+	headerRow2.SetDirection(tview.FlexRow)
+	headerRow2.SetBorder(false)
+
+	headerRow2.AddItem(createTextView("[i] Info", tcell.ColorWhite), 0, 1, false)
+	headerRow2.AddItem(createTextView("[n] Core NATS", tcell.ColorWhite), 0, 1, false)
+	headerRow2.AddItem(createTextView("[j] Jetstream", tcell.ColorWhite), 0, 1, false)
+	headerRow2.AddItem(createTextView("[Del] Delete", tcell.ColorWhite), 0, 1, false)
+
+	headerRow.AddItem(headerRow1, 0, 1, false)
+	headerRow.AddItem(headerRow2, 0, 1, false)
+	headerRow.SetTitle("NATS-DASH")
+
+	return headerRow
 }

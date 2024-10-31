@@ -6,8 +6,8 @@ import (
 	"github.com/nats-io/nats.go"
 )
 
-func TestConnect() error {
-	conn, err := nats.Connect("nats://localhWost:4222",
+func TestConnect(url string) error {
+	conn, err := nats.Connect(url,
 		nats.Timeout(time.Second*2),
 		nats.MaxReconnects(1))
 	if err != nil {
@@ -15,4 +15,8 @@ func TestConnect() error {
 	}
 	defer conn.Close()
 	return nil
+}
+
+func Connect(url string) (*nats.Conn, error) {
+	return nats.Connect(url)
 }

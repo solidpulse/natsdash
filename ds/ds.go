@@ -1,7 +1,11 @@
 package ds
 
-import "os"
-import "encoding/json"
+import (
+	"encoding/json"
+	"os"
+
+	"github.com/nats-io/nats.go"
+)
 
 type Data struct {
 	//list of contexts
@@ -13,6 +17,7 @@ type Context struct {
 	UUID string
 	Name string
 	URL  string
+	Conn *nats.Conn `json:"-"`
 }
 
 // function to save ConfigData to file in users config directory

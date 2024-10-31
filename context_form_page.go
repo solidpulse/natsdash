@@ -29,7 +29,7 @@ func NewContextFormPage(data *ds.Data) *ContextFormPage {
 
 func (cfp *ContextFormPage) setupUI() {
 	// Header setup
-	headerRow := createHeaderRow()
+	headerRow := createContextFormHeaderRow()
 	cfp.AddItem(headerRow, 0, 4, false)
 
 	// Form setup
@@ -79,13 +79,12 @@ func (cfp *ContextFormPage) saveContext() {
 	url := cfp.form.GetFormItemByLabel("URL").(*tview.InputField).GetText()
 	errTxt := cfp.form.GetFormItem(2).(*tview.TextView)
 	errTxt.SetText("Connecting to server...")
-	// TODO: Implement save functionality
 
 	uuid := uuid.New().String()
 	newCtx := ds.Context{UUID: uuid, Name: name, URL: url}
 
 	go func() {
-		err := natsutil.TestConnect()
+		err := natsutil.TestConnect(url)
 		if err != nil {
 			errTxt.SetText(err.Error())
 			return
@@ -121,4 +120,29 @@ func (cfp *ContextFormPage) goBackToContextPage() {
 	pages.SwitchToPage("contexts")
 	_, b := pages.GetFrontPage()
 	b.(*ContextPage).Redraw()
+}
+
+func createContextFormHeaderRow() *tview.Flex {
+	headerRow := tview.NewFlex()
+	headerRow.SetBorder(false)
+	headerRow.
+		SetDirection(tview.FlexColumn).
+		SetBorderPadding(1, 0, 1, 1)
+
+	headerRow1 := tview.NewFlex()
+	headerRow1.SetDirection(tview.FlexRow)
+	headerRow1.SetBorder(false)
+
+	headerRow1.AddItem(createColoredTextView("[white:green] NATS [yellow:white] DASH ", tcell.ColorWhite), 0, 1, false)
+	headerRow1.AddItem(createTextView("[Esc] Back", tcell.ColorWhite), 0, 1, false)
+
+	headerRow2 := tview.NewFlex()
+	headerRow2.SetDirection(tview.FlexRow)
+	headerRow2.SetBorder(false)
+
+	headerRow.AddItem(headerRow1, 0, 1, false)
+	headerRow.AddItem(headerRow2, 0, 1, false)
+	headerRow.SetTitle("NATS-DASH")
+
+	return headerRow
 }
