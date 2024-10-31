@@ -91,6 +91,26 @@ func (cp *ContextPage) setupInputCapture() {
 			pages.SwitchToPage("natsPage")
 			_, b := pages.GetFrontPage()
 			b.(*NatsPage).redraw(&data.CurrCtx)
+
+			// Connect to NATS
+			go func() {
+				conn, err := natsutil.Connect(data.CurrCtx.URL)
+				if err != nil {
+					// Handle error
+					return
+				}
+				data.CurrCtx.Conn = conn
+
+				// Open log file
+				logFilePath := path.Join(os.TempDir(), "natsdash", fmt.Sprintf("%s.log", data.CurrCtx.UUID))
+				logFile, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+				if err != nil {
+					// Handle error
+					return
+				}
+				data.CurrCtx.LogFilePath = logFilePath
+				data.CurrCtx.LogFile = logFile
+			}()
 		}
 		return event
 	})
