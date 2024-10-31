@@ -26,6 +26,18 @@ func NewContextFormPage(app *tview.Application, data *ds.Data) *ContextFormPage 
 	cfp.setupUI()
 	cfp.setupInputCapture()
 
+	// Establish NATS connection when the context_form page opens
+	go func() {
+		if data.CurrCtx.URL != "" {
+			conn, err := natsutil.Connect(data.CurrCtx.URL)
+			if err != nil {
+				// Handle error
+				return
+			}
+			data.CurrCtx.Conn = conn
+		}
+	}()
+
 	return cfp
 }
 
