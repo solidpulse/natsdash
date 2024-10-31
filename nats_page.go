@@ -74,11 +74,11 @@ func (cfp *NatsPage) redraw(ctx *ds.Context) {
 
 func (cfp *NatsPage) setupInputCapture() {
 	cfp.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		switch event.Key() {
-		case tcell.KeyEsc:
+		switch {
+		case event.Key() == tcell.KeyEsc:
 			cfp.goBackToContextPage()
 			return nil
-		case tcell.KeyCtrlEnter:
+		case event.Key() == tcell.KeyEnter && event.Modifiers() == tcell.ModCtrl:
 			cfp.sendMessage()
 			return nil
 		}
