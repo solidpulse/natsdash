@@ -72,45 +72,53 @@ func (configData *Data) SaveToFile() error {
 	return nil
 }
 
-// function to load ConfigData from file in users config directory
-func (data *Data) LoadFromFile() error {
-	//get user config directory
-	userConfigDir, err := os.UserConfigDir()
+import (
+	"path/filepath"
+	"strings"
+)
+
+// function to load ConfigData from directory in users config directory
+func (data *Data) LoadFromDir(dirPath string) error {
+	// Open the directory
+	dir, err := os.Open(dirPath)
 	if err != nil {
 		return err
 	}
-	//create config directory if it doesn't exist
-	configDir := userConfigDir + "/nats"
-	if _, err := os.Stat(configDir); os.IsNotExist(err) {
-		err = os.Mkdir(configDir, 0755)
-		if err != nil {
-			return err
-		}
-	}
-	//create config file
-	configFile, err := os.Open(configDir + "/config.json")
-	if err != nil {
-		return err
-	}
-	defer configFile.Close()
-	configData := &Data{}
-	//read config data from file
-	err = json.NewDecoder(configFile).Decode(configData)
+	defer dir.Close()
+
+	// Read all files in the directory
+	files, err := dir.Readdir(-1)
 	if err != nil {
 		return err
 	}
 
-	//merge contexts if they exist based on UUID else append
-	for _, ctx := range configData.Contexts {
-		found := false
-		for i, c := range data.Contexts {
-			if c.Name == ctx.Name {
-				data.Contexts[i] = ctx
-				found = true
+	// Iterate over each file
+	for _, file := range files {
+		// Check if the file is a JSON file
+		if !file.IsDir() && strings.HasSuffix(file.Name(), ".json") {
+			// Open the file
+			filePath := filepath.Join(dirPath, file.Name())
+			file, err := os.Open(filePath)
+			if err != nil {
+				return err
 			}
-		}
-		if !found {
-			data.Contexts = append(data.Contexts, ctx)
+			defer file.Close()
+
+			// Unmarshal the file contents into a NatsCliContext
+			var ctx NatsCliContext
+			err = json.NewDecoder(file).Decode(&ctx)
+			if err != nil {
+				return err
+			}
+
+			// Create a new Context with the filename as the Name and the unmarshaled data
+			context := Context{
+				Name:    strings.TrimSuffix(file.Name(), ".json"),
+				CtxData: ctx,
+			}
+
+			// Append the new Context to the Data's Contexts slice
+			data.Contexts = append(data.Contexts, context)
 		}
 	}
 
