@@ -128,17 +128,18 @@ func (cfp *NatsPage) resetTailFile(logFilePath string) {
 	cfp.logView.Clear()
 
 	// Open the log file
-	logFile, err := os.Open(logFilePath)
-	if err != nil {
-		cfp.app.QueueUpdateDraw(func() {
-			cfp.logView.Write([]byte("Error opening log file: " + err.Error() + "\n"))
-		})
-		return
-	}
-	defer logFile.Close()
+
 
 	// Tail the log file and update the log view
 	go func() {
+		logFile, err := os.Open(logFilePath)
+		if err != nil {
+			cfp.app.QueueUpdateDraw(func() {
+				cfp.logView.Write([]byte("Error opening log file: " + err.Error() + "\n"))
+			})
+			return
+		}
+		defer logFile.Close()
 		buf := make([]byte, 1024)
 		offset, _ := logFile.Seek(0, io.SeekEnd)
 		for {
