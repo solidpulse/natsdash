@@ -46,19 +46,19 @@ func NewContextFormPage(app *tview.Application, data *ds.Data) *ContextFormPage 
 func (cfp *ContextFormPage) setupUI() {
 	// Header setup
 	headerRow := createContextFormHeaderRow()
-	cfp.AddItem(headerRow, 0, 4, false)
+	cfp.AddItem(headerRow, 0, 2, false)
 
 	// Form setup
 	cfp.form = createContextForm(&cfp.Data.CurrCtx)
 	cfp.form.AddButton("Save", cfp.saveContext).
 		AddButton("Cancel", cfp.cancelForm)
-	cfp.AddItem(cfp.form, 0, 18, true)
+	cfp.AddItem(cfp.form, 0, 16, true)
 
 	// Footer setup
 	footer := tview.NewFlex()
 	footer.SetBorder(true)
 	cfp.footerTxt = createTextView("", tcell.ColorWhite)
-	footer.AddItem(cfp.footerTxt, 0, 1, false)
+	footer.AddItem(cfp.footerTxt, 0, 2, false)
 	cfp.AddItem(footer, 0, 1, false)
 
 	cfp.SetBorderPadding(1, 1, 1, 1)
@@ -117,7 +117,7 @@ func (cfp *ContextFormPage) setupInputCapture() {
 func (cfp *ContextFormPage) saveContext() {
 	name := cfp.form.GetFormItemByLabel("Name").(*tview.InputField).GetText()
 	url := cfp.form.GetFormItemByLabel("URL").(*tview.InputField).GetText()
-	cfp.notify("Connecting to server...", 5*time.Second, "info")
+	cfp.notify("Connecting to server...", 30*time.Second, "info")
 
 	newCtx := ds.Context{ Name: name, CtxData: ds.NatsCliContext{URL: url}}
 
@@ -187,7 +187,7 @@ func createContextFormHeaderRow() *tview.Flex {
 	headerRow1.SetDirection(tview.FlexRow)
 	headerRow1.SetBorder(false)
 
-	headerRow1.AddItem(createTextView("[Esc] Back", tcell.ColorWhite), 0, 1, false)
+	headerRow1.AddItem(createTextView("[Esc] Back  |  [Tab] Focus Next  | [shift+Tab] Focus Previous", tcell.ColorWhite), 0, 1, false)
 
 	headerRow2 := tview.NewFlex()
 	headerRow2.SetDirection(tview.FlexRow)
