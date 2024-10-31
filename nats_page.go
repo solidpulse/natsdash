@@ -61,6 +61,7 @@ func (cfp *NatsPage) setupUI() {
 func (cfp *NatsPage) redraw(ctx *ds.Context) {
 	// Update log view title with the current context's log file path
 	cfp.logView.SetTitle(ctx.LogFilePath)
+	cfp.resetTailFile(ctx.LogFile)
 }
 
 func (cfp *NatsPage) setupInputCapture() {
@@ -97,4 +98,23 @@ func createNatsPageHeaderRow() *tview.Flex {
 	headerRow.SetTitle("NATS-DASH")
 
 	return headerRow
+}
+func (cfp *NatsPage) resetTailFile(logFile *os.File) {
+	// Clear the log view
+	cfp.logView.Clear()
+
+	// Tail the log file and update the log view
+	go func() {
+		scanner := bufio.NewScanner(logFile)
+		for scanner.Scan() {
+			cfp.app.QueueUpdateDraw(func() {
+				cfp.logView.Write([]byte(scanner.Text() + "\n"))
+			})
+		}
+		if err := scanner.Err(); err != nil {
+			cfp.app.QueueUpdateDraw(func() {
+				cfp.logView.Write([]byte("Error reading log file: " + err.Error() + "\n"))
+			})
+		}
+	}()
 }
