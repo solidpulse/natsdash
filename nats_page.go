@@ -68,7 +68,7 @@ func (cfp *NatsPage) setupUI() {
 func (cfp *NatsPage) redraw(ctx *ds.Context) {
 	// Update log view title with the current context's log file path
 	cfp.logView.SetTitle(ctx.LogFilePath)
-	cfp.resetTailFile(ctx.LogFile)
+	cfp.resetTailFile(ctx.LogFilePath)
 	go cfp.app.Draw()
 }
 
@@ -115,7 +115,7 @@ func createNatsPageHeaderRow() *tview.Flex {
 
 	return headerRow
 }
-func (cfp *NatsPage) resetTailFile(logFile *os.File) {
+func (cfp *NatsPage) resetTailFile(logFilePath string) {
 	// Stop the previous tailing goroutine
 	cfp.tailingMutex.Lock()
 	if cfp.tailingDone != nil {
@@ -127,6 +127,16 @@ func (cfp *NatsPage) resetTailFile(logFile *os.File) {
 	// Clear the log view
 	cfp.logView.Clear()
 
+	// Open the log file
+	logFile, err := os.Open(logFilePath)
+	if err != nil {
+		cfp.app.QueueUpdateDraw(func() {
+			cfp.logView.Write([]byte("Error opening log file: " + err.Error() + "\n"))
+		})
+		return
+	}
+	defer logFile.Close()
+
 	// Tail the log file and update the log view
 	go func() {
 		buf := make([]byte, 1024)
@@ -136,9 +146,6 @@ func (cfp *NatsPage) resetTailFile(logFile *os.File) {
 			case <-cfp.tailingDone:
 				return
 			default:
-				if cfp.tailingDone == nil {
-					return
-				}
 				n, err := logFile.ReadAt(buf, offset)
 				if err != nil && err != io.EOF {
 					cfp.app.QueueUpdateDraw(func() {
