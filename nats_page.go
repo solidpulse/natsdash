@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bufio"
+	"os"
 
 	"github.com/evnix/natsdash/ds"
 	"github.com/gdamore/tcell/v2"
