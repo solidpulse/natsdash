@@ -82,6 +82,9 @@ func (cp *ContextPage) setupInputCapture() {
 			b.(*ServerInfoPage).redraw(&data.CurrCtx)
 		} else if event.Rune() == 'n' || event.Rune() == 'N' {
 			idx := cp.ctxListView.GetCurrentItem()
+			if len(cp.Data.Contexts) == 0 {
+				return event
+			}
 			data.CurrCtx = cp.Data.Contexts[idx]
 			pages.SwitchToPage("natsPage")
 			_, b := pages.GetFrontPage()
