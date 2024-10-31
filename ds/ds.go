@@ -63,7 +63,7 @@ func GetConfigDir() (string, error) {
 	return configDir, nil
 }
 
-// function to save ConfigData to file in users config directory
+// function to save ConfigData to multiple files in the users config directory
 func (configData *Data) SaveToFile() error {
 	//get user config directory
 	userConfigDir, err := os.UserConfigDir()
@@ -78,18 +78,20 @@ func (configData *Data) SaveToFile() error {
 			return err
 		}
 	}
-	//create config file
-	configFile, err := os.Create(configDir + "/config.json")
-	if err != nil {
-		return err
-	}
-	defer configFile.Close()
-	//write config data to file
 
-	//write config data to file
-	err = json.NewEncoder(configFile).Encode(configData)
-	if err != nil {
-		return err
+	// Save each context to a separate file
+	for _, context := range configData.Contexts {
+		filePath := filepath.Join(configDir, context.Name+".json")
+		file, err := os.Create(filePath)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+
+		err = json.NewEncoder(file).Encode(context.CtxData)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
