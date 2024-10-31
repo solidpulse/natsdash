@@ -120,6 +120,9 @@ func (cp *ContextPage) setupInputCapture() {
 				}
 				data.CurrCtx.LogFilePath = logFilePath
 				data.CurrCtx.LogFile = logFile
+				logFile.WriteString("Connected to NATS. ClusterName: "+conn.ConnectedClusterName()+
+				"ServerID: "+conn.ConnectedServerId())
+
 			}()
 		}
 		return event

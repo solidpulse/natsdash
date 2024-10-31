@@ -55,7 +55,6 @@ func (cfp *NatsPage) setupUI() {
 	cfp.txtArea.SetPlaceholder("Message...")
 	cfp.txtArea.SetBorder(true)
 	cfp.AddItem(cfp.txtArea, 0, 8, false)
-
 	cfp.SetBorderPadding(0, 0, 1, 1)
 }
 
