@@ -13,10 +13,27 @@ type Data struct {
 	CurrCtx  Context `json:"-"`
 }
 
+type NatsCliContext struct {
+	Description string `json:"description"`
+	URL         string `json:"url"`
+	Token       string `json:"token"`
+	User        string `json:"user"`
+	Password    string `json:"password"`
+	Creds       string `json:"creds"`
+	Nkey        string `json:"nkey"`
+	Cert        string `json:"cert"`
+	Key         string `json:"key"`
+	CA          string `json:"ca"`
+	NSC         string `json:"nsc"`
+	JetstreamDomain       string `json:"jetstream_domain"`
+	JetstreamAPIPrefix    string `json:"jetstream_api_prefix"`
+	JetstreamEventPrefix  string `json:"jetstream_event_prefix"`
+	InboxPrefix           string `json:"inbox_prefix"`
+	UserJWT               string `json:"user_jwt"`
+}
 type Context struct {
-	UUID        string
-	Name        string
-	URL         string
+	Name        string 
+	CtxData     string 
 	LogFilePath string      `json:"-"`
 	LogFile     *os.File    `json:"-"`
 	Conn        *nats.Conn `json:"-"`
@@ -63,7 +80,7 @@ func (data *Data) LoadFromFile() error {
 		return err
 	}
 	//create config directory if it doesn't exist
-	configDir := userConfigDir + "/natsdash"
+	configDir := userConfigDir + "/nats"
 	if _, err := os.Stat(configDir); os.IsNotExist(err) {
 		err = os.Mkdir(configDir, 0755)
 		if err != nil {
@@ -87,7 +104,7 @@ func (data *Data) LoadFromFile() error {
 	for _, ctx := range configData.Contexts {
 		found := false
 		for i, c := range data.Contexts {
-			if c.UUID == ctx.UUID {
+			if c.Name == ctx.Name {
 				data.Contexts[i] = ctx
 				found = true
 			}
