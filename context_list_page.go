@@ -98,12 +98,11 @@ func (cp *ContextPage) setupInputCapture() {
 				return event
 			}
 			data.CurrCtx = cp.Data.Contexts[idx]
-			pages.SwitchToPage("natsPage")
-			_, b := pages.GetFrontPage()
-			b.(*NatsPage).redraw(&data.CurrCtx)
+
 
 			// Connect to NATS
 			go func() {
+				cp.notify("Connecting to NATS...", 5*time.Second)
 				conn, err := natsutil.Connect(data.CurrCtx.URL)
 				if err != nil {
 					cp.notify(fmt.Sprintf("Error connecting to NATS: %s", err.Error()), 5*time.Second)
@@ -119,7 +118,7 @@ func (cp *ContextPage) setupInputCapture() {
 					cp.notify(fmt.Sprintf("Error creating log directory: %s", err.Error()), 5*time.Second)
 					return
 				}
-				logFile, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+				logFile, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0644)
 				if err != nil {
 					cp.notify(fmt.Sprintf("Error opening log file: %s", err.Error()), 5*time.Second)
 					return
@@ -127,7 +126,10 @@ func (cp *ContextPage) setupInputCapture() {
 				data.CurrCtx.LogFilePath = logFilePath
 				data.CurrCtx.LogFile = logFile
 				logFile.WriteString("Connected to NATS. ClusterName: " + conn.ConnectedClusterName() +
-					" ServerID: " + conn.ConnectedServerId() + "\n")
+				" ServerID: " + conn.ConnectedServerId() + "\n")
+				pages.SwitchToPage("natsPage")
+				_, b := pages.GetFrontPage()
+				b.(*NatsPage).redraw(&data.CurrCtx)
 
 			}()
 		}
@@ -145,6 +147,7 @@ func (cp *ContextPage) notify(message string, duration time.Duration) {
 
 func (cp *ContextPage) Redraw() {
 	cp.ctxListView.Clear()
+	cp.footer.SetText("")
 	for _, ctx := range cp.Data.Contexts {
 		cp.ctxListView.AddItem(ctx.Name, "", 0, nil)
 	}

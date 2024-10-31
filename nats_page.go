@@ -68,6 +68,7 @@ func (cfp *NatsPage) redraw(ctx *ds.Context) {
 	// Update log view title with the current context's log file path
 	cfp.logView.SetTitle(ctx.LogFilePath)
 	cfp.resetTailFile(ctx.LogFile)
+	go cfp.app.Draw()
 }
 
 func (cfp *NatsPage) setupInputCapture() {
@@ -127,6 +128,7 @@ func (cfp *NatsPage) resetTailFile(logFile *os.File) {
 			default:
 				cfp.app.QueueUpdateDraw(func() {
 					cfp.logView.Write([]byte(scanner.Text() + "\n"))
+					go cfp.app.Draw()
 				})
 			}
 		}
