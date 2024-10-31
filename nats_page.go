@@ -56,7 +56,7 @@ func (cfp *NatsPage) setupUI() {
 	// })
 	cfp.subjectFilter.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyTab {
-			cfp.app.SetFocus(cfp.subjectName)
+			cfp.app.SetFocus(cfp.logView)
 			return nil
 		}
 		return event
@@ -87,7 +87,7 @@ func (cfp *NatsPage) setupUI() {
 	})
 	cfp.subjectName.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyTab {
-			cfp.app.SetFocus(cfp.txtArea)
+			cfp.app.SetFocus(cfp.logView)
 			return nil
 		}
 		return event
