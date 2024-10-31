@@ -9,8 +9,9 @@ import (
 
 type ContextFormPage struct {
 	*tview.Flex
-	Data *ds.Data
-	form *tview.Form
+	Data     *ds.Data
+	form     *tview.Form
+	currUUID string
 }
 
 func NewContextFormPage(data *ds.Data) *ContextFormPage {
@@ -48,6 +49,17 @@ func (cfp *ContextFormPage) setupUI() {
 	cfp.SetBorderPadding(1, 1, 1, 1)
 }
 
+func (cfp *ContextFormPage) redraw(ctx *ds.Context) {
+	cfp.currUUID = ctx.UUID
+	if cfp.currUUID != "" {
+		cfp.form.GetFormItemByLabel("Name").(*tview.InputField).SetText(ctx.Name)
+		cfp.form.GetFormItemByLabel("URL").(*tview.InputField).SetText(ctx.URL)
+	} else {
+		cfp.form.GetFormItemByLabel("Name").(*tview.InputField).SetText("")
+		cfp.form.GetFormItemByLabel("URL").(*tview.InputField).SetText("nats://")
+	}
+}
+
 func (cfp *ContextFormPage) setupInputCapture() {
 	cfp.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyEsc {
@@ -65,7 +77,21 @@ func (cfp *ContextFormPage) saveContext() {
 
 	uuid := uuid.New().String()
 	newCtx := ds.Context{UUID: uuid, Name: name, URL: url}
-	cfp.Data.Contexts = append(cfp.Data.Contexts, newCtx)
+
+	if cfp.currUUID != "" {
+		for i := range cfp.Data.Contexts {
+			if cfp.Data.Contexts[i].UUID == cfp.currUUID {
+				cfp.Data.Contexts[i].Name = name
+				cfp.Data.Contexts[i].URL = url
+				cfp.Data.CurrCtx = cfp.Data.Contexts[i]
+				break
+			}
+		}
+	} else {
+		cfp.Data.Contexts = append(cfp.Data.Contexts, newCtx)
+		cfp.Data.CurrCtx = newCtx
+	}
+
 	cfp.Data.SaveToFile()
 	cfp.goBackToContextPage()
 }

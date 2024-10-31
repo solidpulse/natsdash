@@ -26,7 +26,7 @@ func createHeaderRow() *tview.Flex {
 
 	headerRow2.AddItem(createTextView("[n] Core NATS", tcell.ColorWhite), 0, 1, false)
 	headerRow2.AddItem(createTextView("[j] Jetstream", tcell.ColorWhite), 0, 1, false)
-	headerRow2.AddItem(createTextView("[Ctrl+Del] Delete", tcell.ColorWhite), 0, 1, false)
+	headerRow2.AddItem(createTextView("[Del] Delete", tcell.ColorWhite), 0, 1, false)
 
 	headerRow.AddItem(headerRow1, 0, 1, false)
 	headerRow.AddItem(headerRow2, 0, 1, false)

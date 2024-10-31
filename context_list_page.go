@@ -54,9 +54,27 @@ func (cp *ContextPage) setupInputCapture() {
 			return nil
 		case tcell.KeyUp, tcell.KeyDown:
 			app.SetFocus(cp.ctxListView)
+		case tcell.KeyDelete:
+			idx := cp.ctxListView.GetCurrentItem()
+			//remove from contexts
+			cp.Data.Contexts = append(cp.Data.Contexts[:idx], cp.Data.Contexts[idx+1:]...)
+			//save to file
+			cp.Data.SaveToFile()
+			//redraw
+			cp.Redraw()
 		}
 		if event.Rune() == 'a' || event.Rune() == 'A' {
+			data.CurrCtx = ds.Context{}
 			pages.SwitchToPage("contextFormPage")
+			_, b := pages.GetFrontPage()
+			b.(*ContextFormPage).redraw(&data.CurrCtx)
+		} else if event.Rune() == 'e' || event.Rune() == 'E' {
+			idx := cp.ctxListView.GetCurrentItem()
+			data.CurrCtx = cp.Data.Contexts[idx]
+			pages.SwitchToPage("contextFormPage")
+			_, b := pages.GetFrontPage()
+			b.(*ContextFormPage).redraw(&data.CurrCtx)
+
 		}
 		return event
 	})
