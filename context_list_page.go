@@ -156,26 +156,9 @@ func (cp *ContextPage) notify(message string, duration time.Duration) {
 	}()
 }
 
-type NatsCliContext struct {
-	Description string `json:"description"`
-	URL         string `json:"url"`
-	Token       string `json:"token"`
-	User        string `json:"user"`
-	Password    string `json:"password"`
-	Creds       string `json:"creds"`
-	Nkey        string `json:"nkey"`
-	Cert        string `json:"cert"`
-	Key         string `json:"key"`
-	CA          string `json:"ca"`
-	NSC         string `json:"nsc"`
-	JetstreamDomain       string `json:"jetstream_domain"`
-	JetstreamAPIPrefix    string `json:"jetstream_api_prefix"`
-	JetstreamEventPrefix  string `json:"jetstream_event_prefix"`
-	InboxPrefix           string `json:"inbox_prefix"`
-	UserJWT               string `json:"user_jwt"`
-}
 
-func (cp *ContextPage) readNatsCliContexts() ([]NatsCliContext, error) {
+
+func (cp *ContextPage) readNatsCliContexts() ([]ds.Context, error) {
 	configDir, err := os.UserConfigDir()
 	if err != nil {
 		return nil, err
@@ -187,7 +170,7 @@ func (cp *ContextPage) readNatsCliContexts() ([]NatsCliContext, error) {
 		return nil, err
 	}
 
-	var contexts []NatsCliContext
+	var contexts []ds.Context
 	for _, file := range files {
 		if file.IsDir() || path.Ext(file.Name()) != ".json" {
 			continue
@@ -199,7 +182,7 @@ func (cp *ContextPage) readNatsCliContexts() ([]NatsCliContext, error) {
 			return nil, err
 		}
 
-		var context NatsCliContext
+		var context ds.Context
 		err = json.Unmarshal(fileContent, &context)
 		if err != nil {
 			return nil, err

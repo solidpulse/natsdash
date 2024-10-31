@@ -7,6 +7,11 @@ import (
 	"github.com/nats-io/nats.go"
 )
 
+import (
+	"path/filepath"
+	"strings"
+)
+
 type Data struct {
 	//list of contexts
 	Contexts []Context
@@ -72,10 +77,7 @@ func (configData *Data) SaveToFile() error {
 	return nil
 }
 
-import (
-	"path/filepath"
-	"strings"
-)
+
 
 // function to load ConfigData from directory in users config directory
 func (data *Data) LoadFromDir(dirPath string) error {
