@@ -16,11 +16,11 @@ func main() {
 	data = &ds.Data{}
 	data.Contexts = make([]ds.Context, 0)
 	data.LoadFromFile()
-	contextPage := NewContextPage(data)
+	contextPage := NewContextPage(app,data)
 	contextPage.Redraw()
-	contextFormPage := NewContextFormPage(data)
-	ServerInfoPage := NewServerInfoPage(data)
-	natsPage := NewNatsPage(data)
+	contextFormPage := NewContextFormPage(app,data)
+	ServerInfoPage := NewServerInfoPage(app,data)
+	natsPage := NewNatsPage(app, data)
 
 	pages.AddPage("natsPage", natsPage, true, false)
 	pages.AddPage("contextFormPage", contextFormPage, true, false)

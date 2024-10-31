@@ -49,7 +49,7 @@ func (cp *ContextPage) setupUI() {
 }
 
 func (cp *ContextPage) setupInputCapture() {
-	cp.SetInputCapture(func(event *tcell.EventKey) *tview.EventKey {
+	cp.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyESC:
 			cp.app.Stop() // Add this line
@@ -101,6 +101,7 @@ func (cp *ContextPage) Redraw() {
 	for _, ctx := range cp.Data.Contexts {
 		cp.ctxListView.AddItem(ctx.Name, "", 0, nil)
 	}
+	go cp.app.Draw()
 }
 
 func createContexListHeaderRow() *tview.Flex {
