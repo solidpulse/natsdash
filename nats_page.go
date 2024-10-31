@@ -9,8 +9,12 @@ import (
 
 type NatsPage struct {
 	*tview.Flex
-	Data *ds.Data
-	app  *tview.Application // Add this line
+	Data         *ds.Data
+	app          *tview.Application // Add this line
+	subjectFilter *tview.InputField
+	logView       *tview.TextView
+	subjectName   *tview.InputField
+	txtArea       *tview.TextArea
 }
 
 func NewNatsPage(app *tview.Application, data *ds.Data) *NatsPage {
@@ -29,51 +33,35 @@ func (cfp *NatsPage) setupUI() {
 	// Header setup
 	headerRow := createNatsPageHeaderRow()
 	cfp.AddItem(headerRow, 0, 6, false)
-	subjectFilter := tview.NewInputField()
-	subjectFilter.SetLabel("Filter Subjects: ")
-	subjectFilter.SetBorder(true)
-	subjectFilter.SetBorderPadding(0, 0, 1, 1)
-	cfp.AddItem(subjectFilter, 0, 6, false)
-	logView := tview.NewTextView()
-	logView.SetTitle(data.CurrCtx.LogFilePath)
-	logView.SetBorder(true)
-	cfp.AddItem(logView, 0, 50, false)
-	subjectName := tview.NewInputField()
-	subjectName.SetLabel("Target Subject: ")
-	subjectName.SetBorder(true)
-	cfp.AddItem(subjectName, 0, 6, false)
-	txtArea := tview.NewTextArea()
-	txtArea.SetPlaceholder("Message...")
-	txtArea.SetBorder(true)
-	cfp.AddItem(txtArea, 0, 8, false)
-	// // Form setup
 
-	// // Footer setup
-	// footer := tview.NewFlex().SetBorder(true)
-	// cfp.AddItem(footer, 0, 1, false)
+	// Initialize fields
+	cfp.subjectFilter = tview.NewInputField()
+	cfp.subjectFilter.SetLabel("Filter Subjects: ")
+	cfp.subjectFilter.SetBorder(true)
+	cfp.subjectFilter.SetBorderPadding(0, 0, 1, 1)
+	cfp.AddItem(cfp.subjectFilter, 0, 6, false)
+
+	cfp.logView = tview.NewTextView()
+	cfp.logView.SetTitle(cfp.Data.CurrCtx.LogFilePath)
+	cfp.logView.SetBorder(true)
+	cfp.AddItem(cfp.logView, 0, 50, false)
+
+	cfp.subjectName = tview.NewInputField()
+	cfp.subjectName.SetLabel("Target Subject: ")
+	cfp.subjectName.SetBorder(true)
+	cfp.AddItem(cfp.subjectName, 0, 6, false)
+
+	cfp.txtArea = tview.NewTextArea()
+	cfp.txtArea.SetPlaceholder("Message...")
+	cfp.txtArea.SetBorder(true)
+	cfp.AddItem(cfp.txtArea, 0, 8, false)
 
 	cfp.SetBorderPadding(0, 0, 1, 1)
 }
 
 func (cfp *NatsPage) redraw(ctx *ds.Context) {
-
-	// go func() {
-	// 	cfp.form.GetFormItem(0).(*tview.InputField).SetText("Connecting...")
-	// }()
-
-	// go func() {
-	// 	if ctx.Conn != nil {
-	// 		conn, err := natsutil.Connect(ctx.URL)
-	// 		if err != nil {
-	// 			cfp.form.GetFormItem(0).(*tview.TextView).SetText(err.Error())
-	// 		} else {
-	// 			ctx.Conn = conn
-	// 		}
-	// 	} else {
-	// 		cfp.form.GetFormItem(0).(*tview.TextView).SetText("Connected")
-	// 	}
-	// }()
-
+	// Update log view title with the current context's log file path
+	cfp.logView.SetTitle(ctx.LogFilePath)
 }
 
 func (cfp *NatsPage) setupInputCapture() {
