@@ -1,10 +1,6 @@
 package main
 
 import (
-	"fmt"
-	"os"
-	"path"
-	"time"
 
 	"github.com/evnix/natsdash/ds"
 	"github.com/gdamore/tcell/v2"
@@ -39,8 +35,7 @@ func (cfp *NatsPage) setupUI() {
 	subjectFilter.SetBorderPadding(0, 0, 1, 1)
 	cfp.AddItem(subjectFilter, 0, 6, false)
 	logView := tview.NewTextView()
-	logFilePath := path.Join(os.TempDir(), "natsdash", fmt.Sprintf("%s.log", time.Now().Format("20060102-150405")))
-	logView.SetTitle(logFilePath)
+	logView.SetTitle(data.CurrCtx.LogFilePath)
 	logView.SetBorder(true)
 	cfp.AddItem(logView, 0, 50, false)
 	subjectName := tview.NewInputField()
