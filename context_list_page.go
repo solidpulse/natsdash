@@ -77,10 +77,30 @@ func (cp *ContextPage) setupUI() {
 }
 
 func (cp *ContextPage) displayLicenseCopyrightInfo() {
-	//read from https://raw.githubusercontent.com/solidpulse/natsdash/refs/heads/master/info.json
+	// Fetch the info.json content from the URL
+	resp, err := http.Get("https://raw.githubusercontent.com/solidpulse/natsdash/refs/heads/master/info.json")
+	if err != nil {
+		cp.footerTxt.SetText("Error fetching license info")
+		return
+	}
+	defer resp.Body.Close()
+
+	// Parse the JSON response
+	var info struct {
+		Message     string `json:"message"`
+		IsNotice    bool   `json:"is_notice"`
+		ShowVersion bool   `json:"show_version"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&info); err != nil {
+		cp.footerTxt.SetText("Error parsing license info")
+		return
+	}
+
+	// Update the footer text with the fetched information
 	buildInfo, _ := debug.ReadBuildInfo()
 	currVersion := buildInfo.Main.Version
-	cp.footerTxt.SetText(fmt.Sprintf("NatsDash by SolidPulse | contact: solidpulse@outlook.com | Cuurent: %s", currVersion))
+	footerText := fmt.Sprintf("%s | Current: %s", info.Message, currVersion)
+	cp.footerTxt.SetText(footerText)
 }
 
 func (cp *ContextPage) setupInputCapture() {
