@@ -35,8 +35,8 @@ jobs:
 
       - name: Build binary
         run: |
-          export GOOS=${{ matrix.os }}
-          export GOARCH=${{ matrix.arch }}
+          export FGOOS=${{ matrix.os }}
+          export FGOARCH=${{ matrix.arch }}
           ./build.sh
 
       - name: Upload binary
