@@ -100,7 +100,10 @@ func (cp *ContextPage) displayLicenseCopyrightInfo() {
 	// Update the footer text with the fetched information
 	buildInfo, _ := debug.ReadBuildInfo()
 	currVersion := buildInfo.Main.Version
-	footerText := fmt.Sprintf("%s | Current: %s | Latest: %s", info.Message, currVersion, info.CurrentVersion)
+	footerText := info.Message
+	if info.ShowVersion {
+		footerText = fmt.Sprintf("%s | Current: %s | Latest: %s", info.Message, currVersion, info.CurrentVersion)
+	}
 	cp.footerTxt.SetText(footerText)
 }
 
