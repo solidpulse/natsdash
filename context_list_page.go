@@ -59,7 +59,7 @@ func (cp *ContextPage) setupUI() {
 	footer.SetDirection(tview.FlexRow)
 	footer.SetBorderPadding(0, 0, 1, 1)
 
-	cp.footerTxt = createTextView("NatsDash by SolidPulse | contact: solidpulse@outlook.com", tcell.ColorWhite)
+	cp.footerTxt = createTextView(" -- ", tcell.ColorWhite)
 	go cp.displayLicenseCopyrightInfo()
 	footer.AddItem(cp.footerTxt, 0, 1, false)
 	cp.AddItem(footer, 3, 2, false)
@@ -80,7 +80,7 @@ func (cp *ContextPage) displayLicenseCopyrightInfo() {
 	// Fetch the info.json content from the URL
 	resp, err := http.Get("https://raw.githubusercontent.com/solidpulse/natsdash/refs/heads/master/info.json")
 	if err != nil {
-		cp.footerTxt.SetText("Error fetching license info")
+		cp.footerTxt.SetText("Error fetching info")
 		return
 	}
 	defer resp.Body.Close()
@@ -93,7 +93,7 @@ func (cp *ContextPage) displayLicenseCopyrightInfo() {
 		CurrentVersion string `json:"current_version"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&info); err != nil {
-		cp.footerTxt.SetText("Error parsing license info")
+		cp.footerTxt.SetText("Error parsing info")
 		return
 	}
 
@@ -101,10 +101,12 @@ func (cp *ContextPage) displayLicenseCopyrightInfo() {
 	buildInfo, _ := debug.ReadBuildInfo()
 	currVersion := buildInfo.Main.Version
 	footerText := info.Message
+	logger.Info("resp: %s", info)
 	if info.ShowVersion {
 		footerText = fmt.Sprintf("%s | Current: %s | Latest: %s", info.Message, currVersion, info.CurrentVersion)
 	}
 	cp.footerTxt.SetText(footerText)
+	go cp.app.Draw()
 }
 
 func (cp *ContextPage) setupInputCapture() {
