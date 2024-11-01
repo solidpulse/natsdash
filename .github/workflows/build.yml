@@ -26,11 +26,11 @@ jobs:
         with:
           go-version: 1.17
 
+      - name: Make build.sh executable
+        run: chmod +x build.sh
+
       - name: Build binary
-        run: |
-          export GOOS=${{ matrix.os }}
-          export GOARCH=${{ matrix.arch }}
-          go build -o natsdash-${{ matrix.os }}-${{ matrix.arch }}
+        run: ./build.sh
 
       - name: Upload binary
         uses: actions/upload-artifact@v2
