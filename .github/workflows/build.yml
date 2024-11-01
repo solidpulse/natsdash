@@ -30,7 +30,10 @@ jobs:
         run: chmod +x build.sh
 
       - name: Build binary
-        run: ./build.sh
+        run: |
+          export GOOS=${{ matrix.os }}
+          export GOARCH=${{ matrix.arch }}
+          ./build.sh
 
       - name: Upload binary
         uses: actions/upload-artifact@v2

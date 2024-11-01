@@ -13,5 +13,5 @@ NEW_VERSION="${version_parts[0]}.${version_parts[1]}.${version_parts[2]}"
 
 echo "Current version: $CURRENT_VERSION -> New version: $NEW_VERSION"
 
-# Build the application with the new version
-go build -gcflags=all="-N -l" -o natsdash -ldflags "-X github.com/solidpulse/natsdash/ds.Version=$NEW_VERSION"
+# Build the application with the new version and respect GOOS and GOARCH
+go build -gcflags=all="-N -l" -o natsdash-${GOOS}-${GOARCH} -ldflags "-X github.com/solidpulse/natsdash/ds.Version=$NEW_VERSION"
