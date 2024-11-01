@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/evnix/natsdash/ds"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"github.com/solidpulse/natsdash/ds"
 )
 
 type ServerInfoPage struct {

@@ -1,9 +1,9 @@
 package main
 
 import (
-	"github.com/evnix/natsdash/ds"
 	"github.com/rivo/tview"
-	"github.com/evnix/natsdash/logger"
+	"github.com/solidpulse/natsdash/ds"
+	"github.com/solidpulse/natsdash/logger"
 )
 
 var app *tview.Application
@@ -18,7 +18,7 @@ func main() {
 
 	data = &ds.Data{}
 	data.Contexts = make([]ds.Context, 0)
-	contextPage := NewContextPage(app,data)
+	contextPage := NewContextPage(app, data)
 	contextFormPage := NewContextFormPage(app, data)
 	ServerInfoPage := NewServerInfoPage(app, data)
 	natsPage := NewNatsPage(app, data)

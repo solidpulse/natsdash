@@ -7,9 +7,11 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/evnix/natsdash/logger"
 	"github.com/nats-io/nats.go"
+	"github.com/solidpulse/natsdash/logger"
 )
+
+var Version = "dev"
 
 type Data struct {
 	//list of contexts
@@ -18,45 +20,44 @@ type Data struct {
 }
 
 type NatsCliContext struct {
-	Description string `json:"description"`
-	URL         string `json:"url"`
-	Token       string `json:"token"`
-	User        string `json:"user"`
-	Password    string `json:"password"`
-	Creds       string `json:"creds"`
-	Nkey        string `json:"nkey"`
-	Cert        string `json:"cert"`
-	Key         string `json:"key"`
-	CA          string `json:"ca"`
-	NSC         string `json:"nsc"`
-	JetstreamDomain       string `json:"jetstream_domain"`
-	JetstreamAPIPrefix    string `json:"jetstream_api_prefix"`
-	JetstreamEventPrefix  string `json:"jetstream_event_prefix"`
-	InboxPrefix           string `json:"inbox_prefix"`
-	UserJWT               string `json:"user_jwt"`
+	Description          string `json:"description"`
+	URL                  string `json:"url"`
+	Token                string `json:"token"`
+	User                 string `json:"user"`
+	Password             string `json:"password"`
+	Creds                string `json:"creds"`
+	Nkey                 string `json:"nkey"`
+	Cert                 string `json:"cert"`
+	Key                  string `json:"key"`
+	CA                   string `json:"ca"`
+	NSC                  string `json:"nsc"`
+	JetstreamDomain      string `json:"jetstream_domain"`
+	JetstreamAPIPrefix   string `json:"jetstream_api_prefix"`
+	JetstreamEventPrefix string `json:"jetstream_event_prefix"`
+	InboxPrefix          string `json:"inbox_prefix"`
+	UserJWT              string `json:"user_jwt"`
 }
 type Context struct {
-	Name        string 
-	CtxData     NatsCliContext 
-	LogFilePath string      `json:"-"`
-	LogFile     *os.File    `json:"-"`
-	Conn        *nats.Conn `json:"-"`
+	Name        string
+	CtxData     NatsCliContext
+	LogFilePath string             `json:"-"`
+	LogFile     *os.File           `json:"-"`
+	Conn        *nats.Conn         `json:"-"`
 	CoreNatsSub *nats.Subscription `json:"-"`
 }
-
 
 func GetConfigDir() (string, error) {
 	// Get the user's home directory
 	userConfigDir, err := os.UserConfigDir()
 	if err != nil {
-		return "",err
+		return "", err
 	}
 	//create config directory if it doesn't exist
 	configDir := userConfigDir + "/nats"
 	if _, err := os.Stat(configDir); os.IsNotExist(err) {
 		err = os.Mkdir(configDir, 0755)
 		if err != nil {
-			return "",err
+			return "", err
 		}
 	}
 	return configDir, nil
@@ -73,10 +74,9 @@ func (configData *Data) RemoveContextFileByName(name string) error {
 	if err != nil {
 		logger.Error("Failed to remove file %s: %v", filePath, err) // Add this line
 		return err
-	}	
+	}
 	return nil
 }
-
 
 // function to save ConfigData to multiple files in the users config directory
 func (configData *Data) SaveToFile() error {
@@ -87,7 +87,7 @@ func (configData *Data) SaveToFile() error {
 		logger.Error("Failed to get config directory: %v", err) // Add this line
 		return err
 	}
-	
+
 	// Save each context to a separate file
 	for _, context := range configData.Contexts {
 		filePath := filepath.Join(configDir, context.Name+".json")
@@ -108,8 +108,6 @@ func (configData *Data) SaveToFile() error {
 
 	return nil
 }
-
-
 
 // function to load ConfigData from directory in users config directory
 func (data *Data) LoadFromDir(dirPath string) error {

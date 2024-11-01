@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/evnix/natsdash/ds"
-	"github.com/evnix/natsdash/natsutil"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"github.com/solidpulse/natsdash/ds"
+	"github.com/solidpulse/natsdash/natsutil"
 )
 
 type ContextFormPage struct {
@@ -142,7 +142,6 @@ func (cfp *ContextFormPage) saveContext() {
 			return
 		}
 	}
-
 
 	newCtx := ds.Context{
 		Name: name,

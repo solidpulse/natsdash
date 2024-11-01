@@ -1,4 +1,4 @@
-module github.com/evnix/natsdash
+module github.com/solidpulse/natsdash
 
 go 1.23.1
 

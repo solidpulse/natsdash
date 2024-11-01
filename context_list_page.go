@@ -1,19 +1,19 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"path"
-	"runtime/debug"
+	"strings"
 	"time"
 
-	"github.com/evnix/natsdash/ds"
-	"github.com/evnix/natsdash/logger"
-	"github.com/evnix/natsdash/natsutil"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
+	"github.com/solidpulse/natsdash/ds"
+	"github.com/solidpulse/natsdash/logger"
+	"github.com/solidpulse/natsdash/natsutil"
 )
 
 type ContextPage struct {
@@ -107,13 +107,12 @@ func (cp *ContextPage) displayLicenseCopyrightInfo() {
 	}
 
 	// Extract the required fields
-	message := envMap["MESSAGE"]
-	showVersion := envMap["SHOW_VERSION"] == "true"
-	currentVersion := envMap["CURRENT_VERSION"]
+	message := envMap["message"]
+	showVersion := envMap["show_version"] == "true"
+	currentVersion := envMap["current_version"]
 
 	// Update the footer text with the fetched information
-	buildInfo, _ := debug.ReadBuildInfo()
-	currVersion := buildInfo.Main.Version
+	currVersion := ds.Version
 	footerText := message
 	if showVersion {
 		footerText = fmt.Sprintf("%s | Current: %s | Latest: %s", message, currVersion, currentVersion)

@@ -6,10 +6,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/evnix/natsdash/ds"
 	"github.com/gdamore/tcell/v2"
 	"github.com/nats-io/nats.go"
 	"github.com/rivo/tview"
+	"github.com/solidpulse/natsdash/ds"
 )
 
 type NatsPage struct {

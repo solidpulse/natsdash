@@ -3,8 +3,8 @@ package natsutil
 import (
 	"time"
 
-	"github.com/evnix/natsdash/ds"
 	"github.com/nats-io/nats.go"
+	"github.com/solidpulse/natsdash/ds"
 )
 
 func TestConnect(url string) error {
