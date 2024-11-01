@@ -110,12 +110,16 @@ func (cp *ContextPage) displayLicenseCopyrightInfo() {
 	message := envMap["message"]
 	showVersion := envMap["show_version"] == "true"
 	currentVersion := envMap["current_version"]
+	isNotice := envMap["is_notice"] == "true"
 
 	// Update the footer text with the fetched information
 	currVersion := ds.Version
 	footerText := message
 	if showVersion {
 		footerText = fmt.Sprintf("%s | Current: %s | Latest: %s", message, currVersion, currentVersion)
+	}
+	if isNotice {
+		cp.footerTxt.SetTextColor(getLogLevelColor("warn"))
 	}
 	cp.footerTxt.SetText(footerText)
 	go cp.app.Draw()

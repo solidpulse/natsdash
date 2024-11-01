@@ -30,14 +30,9 @@ func (cfp *ServerInfoPage) setupUI() {
 	headerRow := createServerInfoHeaderRow()
 	cfp.AddItem(headerRow, 0, 4, false)
 
-	// // Form setup
-	cfp.form = tview.NewForm()
-	cfp.form.SetTitle("Info").
-		SetBorder(true)
-	cfp.form.
-		AddTextView("Status", "", 0, 1, false, false).
-		AddButton("Save", nil)
-	cfp.AddItem(cfp.form, 0, 18, true)
+	txtView := createTextView("Coming soon...", tcell.ColorWhite)
+	cfp.AddItem(txtView, 0, 8, false)
+
 
 	// // Footer setup
 	// footer := tview.NewFlex().SetBorder(true)
