@@ -62,6 +62,22 @@ func GetConfigDir() (string, error) {
 	return configDir, nil
 }
 
+func (configData *Data) RemoveContextFileByName(name string) error {
+	configDir, err := GetConfigDir()
+	if err != nil {
+		logger.Error("Failed to get config directory: %v", err) // Add this line
+		return err
+	}
+	filePath := filepath.Join(configDir, name+".json")
+	err = os.Remove(filePath)
+	if err != nil {
+		logger.Error("Failed to remove file %s: %v", filePath, err) // Add this line
+		return err
+	}	
+	return nil
+}
+
+
 // function to save ConfigData to multiple files in the users config directory
 func (configData *Data) SaveToFile() error {
 

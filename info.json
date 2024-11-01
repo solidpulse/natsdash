@@ -1,3 +1,5 @@
 {
-    "description": "NatsDash by SolidPulse | contact: solidpulse@outlook.com"
+    "message": "NatsDash by SolidPulse | contact: solidpulse@outlook.com",
+    "is_notice": false,
+    "show_version": true
 }

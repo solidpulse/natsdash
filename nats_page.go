@@ -14,20 +14,20 @@ import (
 
 type NatsPage struct {
 	*tview.Flex
-	Data         *ds.Data
-	app          *tview.Application // Add this line
+	Data          *ds.Data
+	app           *tview.Application // Add this line
 	subjectFilter *tview.InputField
 	logView       *tview.TextView
 	subjectName   *tview.InputField
 	txtArea       *tview.TextArea
-	tailingDone  chan struct{} // Add this line
-	tailingMutex sync.Mutex    // Add this line
+	tailingDone   chan struct{} // Add this line
+	tailingMutex  sync.Mutex    // Add this line
 }
 
 func NewNatsPage(app *tview.Application, data *ds.Data) *NatsPage {
 	cfp := &NatsPage{
-		Flex: tview.NewFlex().SetDirection(tview.FlexRow),
-		app:  app, // Add this line
+		Flex:        tview.NewFlex().SetDirection(tview.FlexRow),
+		app:         app,                 // Add this line
 		tailingDone: make(chan struct{}), // Add this line
 	}
 	cfp.Data = data
@@ -40,7 +40,7 @@ func NewNatsPage(app *tview.Application, data *ds.Data) *NatsPage {
 func (cfp *NatsPage) setupUI() {
 	// Header setup
 	headerRow := createNatsPageHeaderRow()
-	cfp.AddItem(headerRow, 0, 6, false)
+	cfp.AddItem(headerRow, 2, 6, false)
 
 	// Initialize fields
 	cfp.subjectFilter = tview.NewInputField()
@@ -66,7 +66,7 @@ func (cfp *NatsPage) setupUI() {
 		cfp.subscribeToSubject(cfp.subjectFilter.GetText())
 		cfp.app.SetFocus(cfp.logView)
 	})
-	cfp.AddItem(cfp.subjectFilter, 0, 6, false)
+	cfp.AddItem(cfp.subjectFilter, 3, 6, false)
 
 	cfp.logView = tview.NewTextView()
 	cfp.logView.SetTitle(cfp.Data.CurrCtx.LogFilePath)
@@ -93,7 +93,7 @@ func (cfp *NatsPage) setupUI() {
 		}
 		return event
 	})
-	cfp.AddItem(cfp.subjectName, 0, 6, false)
+	cfp.AddItem(cfp.subjectName, 3, 6, false)
 
 	cfp.txtArea = tview.NewTextArea()
 	cfp.txtArea.SetPlaceholder("Message...")
@@ -178,7 +178,6 @@ func (cfp *NatsPage) resetTailFile(logFilePath string) {
 
 	// Open the log file
 
-
 	// Tail the log file and update the log view
 	go func() {
 		logFile, err := os.Open(logFilePath)
@@ -219,32 +218,32 @@ func (cfp *NatsPage) resetTailFile(logFilePath string) {
 }
 
 func (cfp *NatsPage) subscribeToSubject(subject string) {
-	hourMinSec := time.Now().Format("15:04:05")
 
 	// check if subject is already subscribed
 	if cfp.Data.CurrCtx.CoreNatsSub != nil && cfp.Data.CurrCtx.CoreNatsSub.Subject == subject {
 		return
 	}
 
-    // Unsubscribe from the previous subject if any
-    if cfp.Data.CurrCtx.CoreNatsSub != nil {
-        cfp.Data.CurrCtx.CoreNatsSub.Unsubscribe()
-    }
+	// Unsubscribe from the previous subject if any
+	if cfp.Data.CurrCtx.CoreNatsSub != nil {
+		cfp.Data.CurrCtx.CoreNatsSub.Unsubscribe()
+	}
 
-    // Subscribe to the new subject
-    sub, err := cfp.Data.CurrCtx.Conn.Subscribe(subject, func(msg *nats.Msg) {
-        // Log the incoming message to the log file
-        
-        cfp.Data.CurrCtx.LogFile.WriteString(hourMinSec + " SUB[" + msg.Subject + "] " + string(msg.Data) + "\n")
+	// Subscribe to the new subject
+	sub, err := cfp.Data.CurrCtx.Conn.Subscribe(subject, func(msg *nats.Msg) {
+		// Log the incoming message to the log file
+		hourMinSec := time.Now().Format("15:04:05.00000")
+		cfp.Data.CurrCtx.LogFile.WriteString(hourMinSec + " SUB[" + msg.Subject + "] " + string(msg.Data) + "\n")
 		cfp.logView.ScrollToEnd()
-    })
+	})
 	if err != nil {
-		cfp.Data.CurrCtx.LogFile.WriteString(err.Error()+ "\n")
-	}else{
+		cfp.Data.CurrCtx.LogFile.WriteString(err.Error() + "\n")
+	} else {
+		hourMinSec := time.Now().Format("15:04:05.00000")
 		cfp.Data.CurrCtx.LogFile.WriteString(hourMinSec + " Subscribed to " + subject + "\n")
 	}
 	cfp.Data.CurrCtx.CoreNatsSub = sub
-	
+
 }
 
 func (cfp *NatsPage) sendMessage() {
@@ -253,7 +252,7 @@ func (cfp *NatsPage) sendMessage() {
 	message := cfp.txtArea.GetText()
 	subject := cfp.subjectName.GetText()
 	cfp.Data.CurrCtx.Conn.Publish(subject, []byte(message))
-	hourMinSec := time.Now().Format("15:04:05")
-	cfp.Data.CurrCtx.LogFile.WriteString(hourMinSec+" PUB["+ subject + "] " + message + "\n")
+	hourMinSec := time.Now().Format("15:04:05.00000")
+	cfp.Data.CurrCtx.LogFile.WriteString(hourMinSec + " PUB[" + subject + "] " + message + "\n")
 	cfp.logView.ScrollToEnd()
 }

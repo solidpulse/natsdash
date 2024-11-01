@@ -2,13 +2,13 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path"
 	"runtime/debug"
 	"time"
 
 	"github.com/evnix/natsdash/ds"
+	"github.com/evnix/natsdash/logger"
 	"github.com/evnix/natsdash/natsutil"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -19,7 +19,7 @@ type ContextPage struct {
 	Data        *ds.Data
 	ctxListView *tview.List
 	app         *tview.Application // Add this line
-	footerTxt      *tview.TextView
+	footerTxt   *tview.TextView
 }
 
 func NewContextPage(app *tview.Application, data *ds.Data) *ContextPage {
@@ -39,7 +39,7 @@ func NewContextPage(app *tview.Application, data *ds.Data) *ContextPage {
 func (cp *ContextPage) setupUI() {
 	// Header setup
 	headerRow := createContexListHeaderRow()
-	cp.AddItem(headerRow, 0, 4, false)
+	cp.AddItem(headerRow, 4, 4, false)
 
 	// Context list setup
 	ctxListBox := tview.NewFlex()
@@ -51,7 +51,6 @@ func (cp *ContextPage) setupUI() {
 	ctxListBox.SetBorderPadding(0, 0, 1, 1)
 	cp.AddItem(ctxListBox, 0, 18, false)
 
-
 	// Footer setup
 	footer := tview.NewFlex()
 	footer.SetBorder(true)
@@ -59,6 +58,7 @@ func (cp *ContextPage) setupUI() {
 	footer.SetBorderPadding(0, 0, 1, 1)
 
 	cp.footerTxt = createTextView("NatsDash by SolidPulse | contact: solidpulse@outlook.com", tcell.ColorWhite)
+	go cp.displayLicenseCopyrightInfo()
 	footer.AddItem(cp.footerTxt, 0, 1, false)
 	cp.AddItem(footer, 3, 2, false)
 	cp.SetBorderPadding(1, 0, 1, 1)
@@ -66,15 +66,16 @@ func (cp *ContextPage) setupUI() {
 	cp.reloadNatsCliContexts()
 	contexts := cp.Data.Contexts
 	cp.Data.Contexts = contexts
-	log.Printf("Contexts to be added: %s", (contexts))
+	logger.Info("Contexts to be added: %s", (contexts))
 	for _, ctx := range contexts {
-		log.Printf("Adding context in list %s", ctx.Name)
+		logger.Info("Adding context in list %s", ctx.Name)
 		cp.ctxListView.AddItem(ctx.Name, "", 0, nil)
 	}
-	
+
 }
 
-func (cp *ContextPage) displayLicenseCopyrightInfo()  {
+func (cp *ContextPage) displayLicenseCopyrightInfo() {
+	//read from https://raw.githubusercontent.com/solidpulse/natsdash/refs/heads/master/info.json
 	buildInfo, _ := debug.ReadBuildInfo()
 	currVersion := buildInfo.Main.Version
 	cp.footerTxt.SetText(fmt.Sprintf("NatsDash by SolidPulse | contact: solidpulse@outlook.com | Cuurent: %s", currVersion))
@@ -90,6 +91,13 @@ func (cp *ContextPage) setupInputCapture() {
 			cp.app.SetFocus(cp.ctxListView) // Add this line
 		case tcell.KeyDelete:
 			idx := cp.ctxListView.GetCurrentItem()
+
+			//delete the context file
+			err := cp.Data.RemoveContextFileByName(cp.Data.Contexts[idx].Name)
+			if err != nil {
+				cp.notify(fmt.Sprintf("Error deleting context file: %s", err.Error()), 5*time.Second, "error")
+				return event
+			}
 			//remove from contexts
 			cp.Data.Contexts = append(cp.Data.Contexts[:idx], cp.Data.Contexts[idx+1:]...)
 			//save to file
@@ -148,7 +156,7 @@ func (cp *ContextPage) setupInputCapture() {
 				data.CurrCtx.LogFilePath = logFilePath
 				data.CurrCtx.LogFile = logFile
 				logFile.WriteString("Connected to NATS. ClusterName: " + conn.ConnectedClusterName() +
-				" ServerID: " + conn.ConnectedServerId() + "\n")
+					" ServerID: " + conn.ConnectedServerId() + "\n")
 				pages.SwitchToPage("natsPage")
 				_, b := pages.GetFrontPage()
 				b.(*NatsPage).redraw(&data.CurrCtx)
@@ -170,9 +178,7 @@ func (cp *ContextPage) notify(message string, duration time.Duration, logLevel s
 	}()
 }
 
-
-
-func (cp *ContextPage) reloadNatsCliContexts()  {
+func (cp *ContextPage) reloadNatsCliContexts() {
 	configDir, _ := ds.GetConfigDir()
 	data.LoadFromDir(configDir)
 }

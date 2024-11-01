@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/evnix/natsdash/ds"
@@ -11,11 +12,11 @@ import (
 
 type ContextFormPage struct {
 	*tview.Flex
-	Data     *ds.Data
-	form     *tview.Form
-	currName string
-	app      *tview.Application // Add this line
-	footerTxt      *tview.TextView
+	Data      *ds.Data
+	form      *tview.Form
+	currName  string
+	app       *tview.Application // Add this line
+	footerTxt *tview.TextView
 }
 
 func NewContextFormPage(app *tview.Application, data *ds.Data) *ContextFormPage {
@@ -133,6 +134,15 @@ func (cfp *ContextFormPage) saveContext() {
 	inboxPrefix := cfp.form.GetFormItemByLabel("Inbox Prefix").(*tview.InputField).GetText()
 
 	cfp.notify("Connecting to server...", 30*time.Second, "info")
+	if cfp.Data.CurrCtx.Name != name {
+		//delete the old context file
+		err := cfp.Data.RemoveContextFileByName(cfp.Data.CurrCtx.Name)
+		if err != nil {
+			cfp.notify(fmt.Sprintf("Error deleting old context file: %s", err.Error()), 5*time.Second, "error")
+			return
+		}
+	}
+
 
 	newCtx := ds.Context{
 		Name: name,
@@ -232,30 +242,29 @@ func createContextFormHeaderRow() *tview.Flex {
 	return headerRow
 }
 
-func createContextForm(ctx *ds.Context) *tview.Form {                                                                                     
-	form := tview.NewForm()                                                                                                                      
-	form.SetTitle("Context Form").SetBorder(true)                                                                                                
-	form.AddInputField("Name", ctx.Name, 0, nil, nil)                                                                              
-															
-	ctxData := ctx.CtxData
-	form.AddInputField("Description", ctxData.Description, 0, nil, nil)                                                                              
-	form.AddInputField("URL", ctxData.URL, 0, nil, nil)                                                                                              
-	form.AddInputField("Token", ctxData.Token, 0, nil, nil)                                                                                          
-	form.AddInputField("User", ctxData.User, 0, nil, nil)                                                                                            
-	form.AddInputField("Password", ctxData.Password, 0, nil, nil)                                                                                    
-	form.AddInputField("Creds", ctxData.Creds, 0, nil, nil)                                                                                          
-	form.AddInputField("Nkey", ctxData.Nkey, 0, nil, nil)                                                                                            
-	form.AddInputField("Cert", ctxData.Cert, 0, nil, nil)                                                                                            
-	form.AddInputField("Key", ctxData.Key, 0, nil, nil)                                                                                              
-	form.AddInputField("CA", ctxData.CA, 0, nil, nil)                                                                                                
-	form.AddInputField("NSC", ctxData.NSC, 0, nil, nil)                                                                                              
-	form.AddInputField("Jetstream Domain", ctxData.JetstreamDomain, 0, nil, nil)                                                                     
-	form.AddInputField("Jetstream API Prefix", ctxData.JetstreamAPIPrefix, 0, nil, nil)                                                              
-	form.AddInputField("Jetstream Event Prefix", ctxData.JetstreamEventPrefix, 0, nil, nil)                                                          
-	form.AddInputField("Inbox Prefix", ctxData.InboxPrefix, 0, nil, nil) 
-	return form                                                                                                                                  
-}  
+func createContextForm(ctx *ds.Context) *tview.Form {
+	form := tview.NewForm()
+	form.SetTitle("Context Form").SetBorder(true)
+	form.AddInputField("Name", ctx.Name, 0, nil, nil)
 
+	ctxData := ctx.CtxData
+	form.AddInputField("Description", ctxData.Description, 0, nil, nil)
+	form.AddInputField("URL", ctxData.URL, 0, nil, nil)
+	form.AddInputField("Token", ctxData.Token, 0, nil, nil)
+	form.AddInputField("User", ctxData.User, 0, nil, nil)
+	form.AddInputField("Password", ctxData.Password, 0, nil, nil)
+	form.AddInputField("Creds", ctxData.Creds, 0, nil, nil)
+	form.AddInputField("Nkey", ctxData.Nkey, 0, nil, nil)
+	form.AddInputField("Cert", ctxData.Cert, 0, nil, nil)
+	form.AddInputField("Key", ctxData.Key, 0, nil, nil)
+	form.AddInputField("CA", ctxData.CA, 0, nil, nil)
+	form.AddInputField("NSC", ctxData.NSC, 0, nil, nil)
+	form.AddInputField("Jetstream Domain", ctxData.JetstreamDomain, 0, nil, nil)
+	form.AddInputField("Jetstream API Prefix", ctxData.JetstreamAPIPrefix, 0, nil, nil)
+	form.AddInputField("Jetstream Event Prefix", ctxData.JetstreamEventPrefix, 0, nil, nil)
+	form.AddInputField("Inbox Prefix", ctxData.InboxPrefix, 0, nil, nil)
+	return form
+}
 
 func (cp *ContextFormPage) notify(message string, duration time.Duration, logLevel string) {
 	cp.footerTxt.SetText(message)
