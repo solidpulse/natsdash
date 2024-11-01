@@ -12,7 +12,7 @@ IFS='.' read -r -a version_parts <<< "$CURRENT_VERSION"
 NEW_VERSION="${version_parts[0]}.${version_parts[1]}.${version_parts[2]}"
 
 # Update the info.env file with the new version
-sed -i "s/^current_version=.*/current_version=\"$NEW_VERSION\"/" "$INFO_ENV_PATH"
+sed -i "s/^current_version=.*/current_version=$NEW_VERSION/" "$INFO_ENV_PATH"
 
 echo "Current version: $CURRENT_VERSION -> New version: $NEW_VERSION"
 # Build the application with the new version
