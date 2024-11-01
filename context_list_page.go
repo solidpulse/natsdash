@@ -78,7 +78,7 @@ func (cp *ContextPage) setupUI() {
 
 func (cp *ContextPage) displayLicenseCopyrightInfo() {
 	// Fetch the info.json content from the URL
-	resp, err := http.Get("https://raw.githubusercontent.com/solidpulse/natsdash/refs/heads/master/info.json")
+	resp, err := http.Get("https://raw.githubusercontent.com/solidpulse/natsdash/refs/heads/master/info.env")
 	if err != nil {
 		cp.footerTxt.SetText("Error fetching info")
 		return
@@ -86,24 +86,37 @@ func (cp *ContextPage) displayLicenseCopyrightInfo() {
 	defer resp.Body.Close()
 
 	// Parse the JSON response
-	var info struct {
-		Message       string `json:"message"`
-		IsNotice      bool   `json:"is_notice"`
-		ShowVersion   bool   `json:"show_version"`
-		CurrentVersion string `json:"current_version"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&info); err != nil {
-		cp.footerTxt.SetText("Error parsing info")
+	// Read the response body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		cp.footerTxt.SetText("Error reading info")
 		return
 	}
+
+	// Parse the .env content
+	envContent := string(body)
+	envMap := make(map[string]string)
+	for _, line := range strings.Split(envContent, "\n") {
+		parts := strings.SplitN(line, "=", 2)
+		if len(parts) == 2 {
+			key := strings.TrimSpace(parts[0])
+			value := strings.TrimSpace(parts[1])
+			value = strings.Trim(value, `"`) // Remove surrounding quotes
+			envMap[key] = value
+		}
+	}
+
+	// Extract the required fields
+	message := envMap["MESSAGE"]
+	showVersion := envMap["SHOW_VERSION"] == "true"
+	currentVersion := envMap["CURRENT_VERSION"]
 
 	// Update the footer text with the fetched information
 	buildInfo, _ := debug.ReadBuildInfo()
 	currVersion := buildInfo.Main.Version
-	footerText := info.Message
-	logger.Info("resp: %s", info)
-	if info.ShowVersion {
-		footerText = fmt.Sprintf("%s | Current: %s | Latest: %s", info.Message, currVersion, info.CurrentVersion)
+	footerText := message
+	if showVersion {
+		footerText = fmt.Sprintf("%s | Current: %s | Latest: %s", message, currVersion, currentVersion)
 	}
 	cp.footerTxt.SetText(footerText)
 	go cp.app.Draw()
