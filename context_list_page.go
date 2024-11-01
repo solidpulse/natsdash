@@ -87,9 +87,10 @@ func (cp *ContextPage) displayLicenseCopyrightInfo() {
 
 	// Parse the JSON response
 	var info struct {
-		Message     string `json:"message"`
-		IsNotice    bool   `json:"is_notice"`
-		ShowVersion bool   `json:"show_version"`
+		Message       string `json:"message"`
+		IsNotice      bool   `json:"is_notice"`
+		ShowVersion   bool   `json:"show_version"`
+		CurrentVersion string `json:"current_version"`
 	}
 	if err := json.NewDecoder(resp.Body).Decode(&info); err != nil {
 		cp.footerTxt.SetText("Error parsing license info")
@@ -99,7 +100,7 @@ func (cp *ContextPage) displayLicenseCopyrightInfo() {
 	// Update the footer text with the fetched information
 	buildInfo, _ := debug.ReadBuildInfo()
 	currVersion := buildInfo.Main.Version
-	footerText := fmt.Sprintf("%s | Current: %s", info.Message, currVersion)
+	footerText := fmt.Sprintf("%s | Current: %s | Latest: %s", info.Message, currVersion, info.CurrentVersion)
 	cp.footerTxt.SetText(footerText)
 }
 
