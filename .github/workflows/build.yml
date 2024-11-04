@@ -38,4 +38,4 @@ jobs:
       - name: Upload binary
         uses: softprops/action-gh-release@v1
         with:
-          files: natsdash-${{ matrix.os }}-${{ matrix.arch }}
+          files: natsdash-*
