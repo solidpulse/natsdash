@@ -1,11 +1,5 @@
 #!/bin/bash
 
-# Check if version is provided
-if [ -z "$1" ]; then
-  echo "Usage: $0 <version>"
-  exit 1
-fi
-
 # Fetch the current version from the remote info.env file
 INFO_URL="https://raw.githubusercontent.com/solidpulse/natsdash/refs/heads/master/info.env"
 VERSION=$(curl -s $INFO_URL | grep -oP 'current_version=\K[0-9.]+')
