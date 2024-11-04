@@ -1,3 +1,13 @@
+# NatsDash - A Modern NATS Dashboard
+
+## Introduction
+
+NatsDash is a powerful and intuitive dashboard designed to manage and monitor NATS (Neural Autonomic Transport System) servers. It provides a user-friendly interface to interact with NATS, making it easier to manage subscriptions, publish messages, and monitor server health.
+
+## Description
+
+NatsDash offers a comprehensive set of features to streamline your NATS management tasks. Whether you are a developer, system administrator, or DevOps engineer, NatsDash provides the tools you need to efficiently manage your NATS infrastructure. With support for multiple platforms and architectures, NatsDash ensures that you can deploy it seamlessly across your environment.
+
 # NatsDash Installer
 
 ## Installation
