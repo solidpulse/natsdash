@@ -44,4 +44,4 @@ For manual installation or for specific versions, you can download the binaries 
 
 ## Support
 
-For any issues or questions, please contact us at solidpulse@outlook.com.
+For any issues or questions, please raise an issue or reach out to me at solidpulse@outlook.com
