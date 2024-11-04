@@ -24,6 +24,12 @@ To install the latest version of NatsDash, you can use the provided `install.sh`
    ./install.sh
    ```
 
+   Alternatively, you can use `curl | bash` to directly install NatsDash:
+
+   ```bash
+   curl -sSL https://raw.githubusercontent.com/solidpulse/natsdash/refs/heads/master/install.sh | bash
+   ```
+
 3. The script will download the binary and make it executable.
 
 ## Direct Downloads
