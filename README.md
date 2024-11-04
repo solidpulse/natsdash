@@ -4,7 +4,7 @@
 
 ![NatsDash Demo](nats-jetstream-gui-rcd1.gif)
 
-[Watch the full demo on asciinema](https://asciinema.org/a/687282)
+[Watch the demo on asciinema](https://asciinema.org/a/687282)
 
 NatsDash is an intuitive dashboard/GUI for NATS designed to manage and monitor NATS servers. It provides a user-friendly interface to interact with NATS, making it easier to manage subscriptions, publish messages, and work with JetStream.
 
