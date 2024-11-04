@@ -41,7 +41,6 @@ jobs:
         shell: bash  
 
       - name: Upload binary
-        uses: actions/upload-artifact@v3
+        uses: softprops/action-gh-release@v1
         with:
-          name: natsdash-${{ matrix.os }}-${{ matrix.arch }}
-          path: natsdash-${{ matrix.os }}-${{ matrix.arch }}
+          files: natsdash-${{ matrix.os }}-${{ matrix.arch }}
