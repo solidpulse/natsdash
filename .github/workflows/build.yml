@@ -38,6 +38,7 @@ jobs:
           export FGOOS=${{ matrix.os }}
           export FGOARCH=${{ matrix.arch }}
           ./build.sh
+        shell: bash  
 
       - name: Upload binary
         uses: actions/upload-artifact@v3
