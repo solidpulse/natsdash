@@ -33,7 +33,6 @@ func (cfp *ServerInfoPage) setupUI() {
 	txtView := createTextView("Coming soon...", tcell.ColorWhite)
 	cfp.AddItem(txtView, 0, 8, false)
 
-
 	// // Footer setup
 	// footer := tview.NewFlex().SetBorder(true)
 	// cfp.AddItem(footer, 0, 1, false)

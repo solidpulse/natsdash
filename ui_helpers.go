@@ -18,7 +18,6 @@ func createTextView(text string, color tcell.Color) *tview.TextView {
 		SetText(text)
 }
 
-
 func getLogLevelColor(logLevel string) tcell.Color {
 	switch logLevel {
 	case "debug":
