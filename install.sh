@@ -6,7 +6,14 @@ if [ -z "$1" ]; then
   exit 1
 fi
 
-VERSION=$1
+# Fetch the current version from the remote info.env file
+INFO_URL="https://raw.githubusercontent.com/solidpulse/natsdash/refs/heads/master/info.env"
+VERSION=$(curl -s $INFO_URL | grep -oP 'current_version=\K[0-9.]+')
+
+if [ -z "$VERSION" ]; then
+  echo "Failed to fetch the current version from $INFO_URL"
+  exit 1
+fi
 BASE_URL="https://github.com/solidpulse/natsdash/releases/download/v${VERSION}"
 
 # Determine OS and architecture
