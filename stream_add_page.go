@@ -54,41 +54,60 @@ func (sap *StreamAddPage) setupUI() {
 	footer.AddItem(sap.footerTxt, 0, 1, false)
 	sap.AddItem(footer, 3, 1, false)
 
-	// Set default config using a struct that matches JSON tags
-	type StreamConfig struct {
-		Name              string        `json:"name" yaml:"name"`
-		Description       string        `json:"description,omitempty" yaml:"description,omitempty"`
-		Subjects         []string      `json:"subjects,omitempty" yaml:"subjects,omitempty"`
-		Retention        nats.RetentionPolicy `json:"retention" yaml:"retention"`
-		MaxConsumers     int           `json:"max_consumers" yaml:"max_consumers"`
-		MaxMsgs          int64         `json:"max_msgs" yaml:"max_msgs"`
-		MaxBytes         int64         `json:"max_bytes" yaml:"max_bytes"`
-		Discard          nats.DiscardPolicy `json:"discard" yaml:"discard"`
-		MaxAge           time.Duration `json:"max_age" yaml:"max_age"`
-		MaxMsgsPerSubject int64         `json:"max_msgs_per_subject" yaml:"max_msgs_per_subject"`
-		MaxMsgSize       int32         `json:"max_msg_size" yaml:"max_msg_size"`
-		Storage          nats.StorageType `json:"storage" yaml:"storage"`
-		Replicas         int           `json:"num_replicas" yaml:"num_replicas"`
-	}
+	userFriendlyYAML := `# Stream Configuration
 
-	defaultConfig := StreamConfig{
-		Name:              "my_stream",
-		Description:       "My Stream Description",
-		Subjects:         []string{"my.subject.>"},
-		Retention:        nats.LimitsPolicy,
-		MaxConsumers:     -1,
-		MaxMsgs:          -1,
-		MaxBytes:         -1,
-		Discard:          nats.DiscardOld,
-		MaxAge:           24 * time.Hour,
-		MaxMsgsPerSubject: -1,
-		MaxMsgSize:       -1,
-		Storage:          nats.FileStorage,
-		Replicas:         1,
-	}
+# Name of the stream (required)
+name: my_stream
 
-	yamlBytes, _ := yaml.Marshal(defaultConfig)
-	sap.textArea.SetText(string(yamlBytes), false)
+# Description of the stream (optional)
+description: My Stream Description
+
+# Subjects that messages can be published to (required)
+# Examples: ["orders.*", "shipping.>", "customer.orders.*"]
+subjects: 
+  - my.subject.>
+
+# Storage backend (required)
+# Possible values: file, memory
+storage: file
+
+# Number of replicas for the stream
+# Range: 1-5
+num_replicas: 1
+
+# Retention policy (required)
+# Possible values: limits, interest, workqueue
+retention: limits
+
+# Discard policy when limits are reached
+# Possible values: old, new
+discard: old
+
+# Maximum number of messages in the stream
+# -1 for unlimited
+max_msgs: -1
+
+# Maximum number of bytes in the stream
+# -1 for unlimited
+max_bytes: -1
+
+# Maximum age of messages
+# Examples: 24h, 7d, 1y
+max_age: 24h
+
+# Maximum message size in bytes
+# -1 for unlimited
+max_msg_size: -1
+
+# Maximum number of messages per subject
+# -1 for unlimited
+max_msgs_per_subject: -1
+
+# Maximum number of consumers
+# -1 for unlimited
+max_consumers: -1
+`
+	sap.textArea.SetText(userFriendlyYAML, false)
 }
 
 func (sap *StreamAddPage) setupInputCapture() {
@@ -99,8 +118,57 @@ func (sap *StreamAddPage) setupInputCapture() {
 			return nil
 		}
 		if event.Key() == tcell.KeyEnter && event.Modifiers() == tcell.ModAlt {
-			// TODO: Implement save functionality
-			sap.notify("Save functionality coming soon...", 3*time.Second, "info")
+			yamlText := sap.textArea.GetText()
+			
+			// Parse the YAML into our config struct
+			var config StreamConfig
+			err := yaml.Unmarshal([]byte(yamlText), &config)
+			if err != nil {
+				sap.notify("Invalid YAML configuration: "+err.Error(), 3*time.Second, "error")
+				return nil
+			}
+
+			// Connect to NATS
+			conn, err := natsutil.Connect(&sap.Data.CurrCtx.CtxData)
+			if err != nil {
+				sap.notify("Failed to connect to NATS: "+err.Error(), 3*time.Second, "error")
+				return nil
+			}
+			defer conn.Close()
+
+			// Get JetStream context
+			js, err := conn.JetStream()
+			if err != nil {
+				sap.notify("Failed to get JetStream context: "+err.Error(), 3*time.Second, "error")
+				return nil
+			}
+
+			// Convert to nats.StreamConfig
+			streamConfig := nats.StreamConfig{
+				Name:              config.Name,
+				Description:       config.Description,
+				Subjects:         config.Subjects,
+				Retention:        config.Retention,
+				MaxConsumers:     config.MaxConsumers,
+				MaxMsgs:          config.MaxMsgs,
+				MaxBytes:         config.MaxBytes,
+				Discard:          config.Discard,
+				MaxAge:           config.MaxAge,
+				MaxMsgsPerSubject: config.MaxMsgsPerSubject,
+				MaxMsgSize:       config.MaxMsgSize,
+				Storage:          config.Storage,
+				Replicas:         config.Replicas,
+			}
+
+			// Create the stream
+			_, err = js.AddStream(&streamConfig)
+			if err != nil {
+				sap.notify("Failed to create stream: "+err.Error(), 3*time.Second, "error")
+				return nil
+			}
+
+			sap.notify("Stream created successfully", 3*time.Second, "info")
+			sap.goBack()
 			return nil
 		}
 		return event
