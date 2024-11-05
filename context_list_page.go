@@ -167,7 +167,11 @@ func (cp *ContextPage) setupInputCapture() {
 			_, b := pages.GetFrontPage()
 			b.(*ServerInfoPage).redraw(&data.CurrCtx)
 		} else if event.Rune() == 'j' || event.Rune() == 'J' {
-			cp.notify("Jetstream support coming soon...", 5*time.Second, "info")
+			idx := cp.ctxListView.GetCurrentItem()
+			data.CurrCtx = cp.Data.Contexts[idx]
+			pages.SwitchToPage("streamListPage")
+			_, b := pages.GetFrontPage()
+			b.(*StreamListPage).redraw(&data.CurrCtx)
 		} else if event.Rune() == 'n' || event.Rune() == 'N' {
 			idx := cp.ctxListView.GetCurrentItem()
 			if len(cp.Data.Contexts) == 0 {
