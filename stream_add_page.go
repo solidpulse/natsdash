@@ -32,9 +32,9 @@ func NewStreamAddPage(app *tview.Application, data *ds.Data) *StreamAddPage {
 
 func (sap *StreamAddPage) setupUI() {
 	// Header
-	headerRow := tview.NewFlex().
-		SetDirection(tview.FlexColumn).
-		SetBorderPadding(0, 0, 1, 1)
+	headerRow := tview.NewFlex()
+	headerRow.SetDirection(tview.FlexColumn)
+	headerRow.SetBorderPadding(0, 0, 1, 1)
 
 	headerRow.AddItem(createTextView("[ESC] Back", tcell.ColorWhite), 0, 1, false)
 	headerRow.AddItem(createTextView("[Alt+Enter] Save", tcell.ColorWhite), 0, 1, false)
@@ -48,7 +48,8 @@ func (sap *StreamAddPage) setupUI() {
 	sap.AddItem(sap.textArea, 0, 1, true)
 
 	// Footer
-	footer := tview.NewFlex().SetBorder(true)
+	footer := tview.NewFlex()
+	footer.SetBorder(true)
 	sap.footerTxt = createTextView("", tcell.ColorWhite)
 	footer.AddItem(sap.footerTxt, 0, 1, false)
 	sap.AddItem(footer, 3, 1, false)
@@ -71,12 +72,13 @@ func (sap *StreamAddPage) setupUI() {
 	}
 
 	yamlBytes, _ := yaml.Marshal(defaultConfig)
-	sap.textArea.SetText(string(yamlBytes), true)
+	sap.textArea.SetText(string(yamlBytes), false)
 }
 
 func (sap *StreamAddPage) setupInputCapture() {
 	sap.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyESC {
+			sap.notify("Loading......", 3*time.Second, "info")
 			sap.goBack()
 			return nil
 		}
@@ -90,10 +92,14 @@ func (sap *StreamAddPage) setupInputCapture() {
 }
 
 func (sap *StreamAddPage) goBack() {
-	pages.SwitchToPage("streams")
+	pages.SwitchToPage("streamListPage")
 	_, b := pages.GetFrontPage()
-	b.(*StreamListPage).redraw(sap.Data.CurrCtx)
+	b.(*StreamListPage).redraw(&sap.Data.CurrCtx)
 	sap.app.SetFocus(b)
+}
+
+func (sap *StreamAddPage) redraw(ctx *ds.Context) {
+
 }
 
 func (sap *StreamAddPage) notify(message string, duration time.Duration, logLevel string) {

@@ -110,8 +110,9 @@ func (sp *StreamListPage) setupInputCapture() {
 		switch event.Rune() {
 		case 'a', 'A':
 			logger.Info("Add stream action triggered")
-			pages.AddPage("stream_add", NewStreamAddPage(sp.app, sp.Data), true, true)
-			pages.SwitchToPage("stream_add")
+			pages.SwitchToPage("streamAddPage")
+			_, b := pages.GetFrontPage()
+			b.(*StreamAddPage).redraw(&data.CurrCtx)
 		case 'e', 'E':
 			logger.Info("Edit stream action triggered")
 			sp.notify("Edit stream functionality coming soon...", 3*time.Second, "info")
