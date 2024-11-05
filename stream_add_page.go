@@ -54,8 +54,24 @@ func (sap *StreamAddPage) setupUI() {
 	footer.AddItem(sap.footerTxt, 0, 1, false)
 	sap.AddItem(footer, 3, 1, false)
 
-	// Set default config
-	defaultConfig := nats.StreamConfig{
+	// Set default config using a struct that matches JSON tags
+	type StreamConfig struct {
+		Name              string        `json:"name" yaml:"name"`
+		Description       string        `json:"description,omitempty" yaml:"description,omitempty"`
+		Subjects         []string      `json:"subjects,omitempty" yaml:"subjects,omitempty"`
+		Retention        nats.RetentionPolicy `json:"retention" yaml:"retention"`
+		MaxConsumers     int           `json:"max_consumers" yaml:"max_consumers"`
+		MaxMsgs          int64         `json:"max_msgs" yaml:"max_msgs"`
+		MaxBytes         int64         `json:"max_bytes" yaml:"max_bytes"`
+		Discard          nats.DiscardPolicy `json:"discard" yaml:"discard"`
+		MaxAge           time.Duration `json:"max_age" yaml:"max_age"`
+		MaxMsgsPerSubject int64         `json:"max_msgs_per_subject" yaml:"max_msgs_per_subject"`
+		MaxMsgSize       int32         `json:"max_msg_size" yaml:"max_msg_size"`
+		Storage          nats.StorageType `json:"storage" yaml:"storage"`
+		Replicas         int           `json:"num_replicas" yaml:"num_replicas"`
+	}
+
+	defaultConfig := StreamConfig{
 		Name:              "my_stream",
 		Description:       "My Stream Description",
 		Subjects:         []string{"my.subject.>"},
