@@ -61,10 +61,39 @@ func (sp *StreamListPage) setupUI() {
 }
 
 func (sp *StreamListPage) redraw(ctx *ds.Context) {
-	sp.streamList.Clear()
-	sp.streamList.AddItem("users", "", 0, nil)
-	sp.streamList.AddItem("orders", "", 0, nil)
-	sp.streamList.AddItem("events", "", 0, nil)
+    sp.streamList.Clear()
+    
+    // Connect to NATS
+    conn, err := natsutil.Connect(&ctx.CtxData)
+    if err != nil {
+        logger.Error("Failed to connect to NATS server: %v", err)
+        sp.notify("Failed to connect to NATS server", 3*time.Second, "error")
+        return
+    }
+    defer conn.Close() // Ensure connection is closed when we're done
+
+    // Get JetStream context
+    js, err := conn.JetStream()
+    if err != nil {
+        logger.Error("Failed to get JetStream context: %v", err)
+        sp.notify("Failed to get JetStream context", 3*time.Second, "error")
+        return
+    }
+
+    // List all streams
+    streams := make([]string, 0)
+    for stream := range js.StreamNames() {
+        streams = append(streams, stream)
+    }
+
+    // Add streams to the list
+    for _, stream := range streams {
+        sp.streamList.AddItem(stream, "", 0, nil)
+    }
+
+    if len(streams) == 0 {
+        sp.notify("No streams found", 3*time.Second, "info")
+    }
 }
 
 func (sp *StreamListPage) setupInputCapture() {
