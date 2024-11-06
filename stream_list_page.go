@@ -88,6 +88,8 @@ func (sp *StreamListPage) redraw(ctx *ds.Context) {
     if len(streams) == 0 {
         sp.notify("No streams found", 3*time.Second, "info")
     }
+
+	go sp.app.Draw()
 }
 
 func (sp *StreamListPage) setupInputCapture() {
