@@ -123,7 +123,18 @@ func (sp *StreamListPage) setupInputCapture() {
 			addPage.redraw(&sp.Data.CurrCtx)
 		case 'i', 'I':
 			logger.Info("Stream info action triggered")
-			sp.notify("Stream info functionality coming soon...", 3*time.Second, "info")
+			if sp.streamList.GetItemCount() == 0 {
+				sp.notify("No stream selected", 3*time.Second, "error")
+				return event
+			}
+			idx := sp.streamList.GetCurrentItem()
+			streamName, _ := sp.streamList.GetItemText(idx)
+			logger.Info("Stream info action triggered for: %s", streamName)
+			pages.SwitchToPage("streamInfoPage")
+			_, b := pages.GetFrontPage()
+			infoPage := b.(*StreamInfoPage)
+			infoPage.streamName = streamName
+			infoPage.redraw(&sp.Data.CurrCtx)
 		case 'd', 'D':
 			logger.Info("Delete stream action triggered")
 			sp.notify("Delete stream functionality coming soon...", 3*time.Second, "info")

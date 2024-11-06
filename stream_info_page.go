@@ -76,9 +76,9 @@ func (sap *StreamInfoPage) setupInputCapture() {
 }
 
 func (sap *StreamInfoPage) goBack() {
-	pages.SwitchToPage("StreamInfoPage")
+	pages.SwitchToPage("streamListPage")
 	_, b := pages.GetFrontPage()
-	b.(*StreamInfoPage).redraw(&sap.Data.CurrCtx)
+	b.(*StreamListPage).redraw(&sap.Data.CurrCtx)
 	sap.app.SetFocus(b)
 }
 
@@ -113,10 +113,8 @@ func (sap *StreamInfoPage) redraw(ctx *ds.Context) {
 	
 	yamlTxt := string(yamlBytes)
 	sap.textArea.SetText(yamlTxt, true)
+	go sap.app.Draw()
     
-
-	sap.textArea.SetText(yamlTxt, true)
-
 }
 
 func (sap *StreamInfoPage) notify(message string, duration time.Duration, logLevel string) {
