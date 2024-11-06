@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
@@ -8,7 +9,7 @@ import (
 	"github.com/rivo/tview"
 	"github.com/solidpulse/natsdash/ds"
 	"github.com/solidpulse/natsdash/natsutil"
-	"gopkg.in/yaml.v3"
+	"github.com/yosuke-furukawa/json5/encoding/json5"
 )
 
 type StreamAddPage struct {
@@ -55,59 +56,59 @@ func (sap *StreamAddPage) setupUI() {
 	footer.AddItem(sap.footerTxt, 0, 1, false)
 	sap.AddItem(footer, 3, 1, false)
 
-	userFriendlyYAML := `# Stream Configuration
+	userFriendlyJSON5 := `{
+    // Name of the stream (required)
+    name: "my_stream",
 
-# Name of the stream (required)
-name: my_stream
+    // Description of the stream (optional)
+    description: "My Stream Description",
 
-# Description of the stream (optional)
-description: My Stream Description
+    // Subjects that messages can be published to (required)
+    // Examples: ["orders.*", "shipping.>", "customer.orders.*"]
+    subjects: [
+        "my.subject.>"
+    ],
 
-# Subjects that messages can be published to (required)
-# Examples: ["orders.*", "shipping.>", "customer.orders.*"]
-subjects: 
-  - my.subject.>
+    // Storage backend (required)
+    // Possible values: "file", "memory"
+    storage: "file",
 
-# Storage backend (required)
-# Possible values: file, memory
-storage: file
+    // Number of replicas for the stream
+    // Range: 1-5
+    num_replicas: 1,
 
-# Number of replicas for the stream
-# Range: 1-5
-num_replicas: 1
+    // Retention policy (required)
+    // Possible values: "limits", "interest", "workqueue"
+    retention: "limits",
 
-# Retention policy (required)
-# Possible values: limits, interest, workqueue
-retention: limits
+    // Discard policy when limits are reached
+    // Possible values: "old", "new"
+    discard: "old",
 
-# Discard policy when limits are reached
-# Possible values: old, new
-discard: old
+    // Maximum number of messages in the stream
+    // -1 for unlimited
+    max_msgs: -1,
 
-# Maximum number of messages in the stream
-# -1 for unlimited
-max_msgs: -1
+    // Maximum number of bytes in the stream
+    // -1 for unlimited
+    max_bytes: -1,
 
-# Maximum number of bytes in the stream
-# -1 for unlimited
-max_bytes: -1
+    // Maximum age of messages
+    // Examples: "24h", "7d", "1y"
+    max_age: "24h",
 
-# Maximum age of messages
-# Examples: 24h, 7d, 1y
-max_age: 24h
+    // Maximum message size in bytes
+    // -1 for unlimited
+    max_msg_size: -1,
 
-# Maximum message size in bytes
-# -1 for unlimited
-max_msg_size: -1
+    // Maximum number of messages per subject
+    // -1 for unlimited
+    max_msgs_per_subject: -1,
 
-# Maximum number of messages per subject
-# -1 for unlimited
-max_msgs_per_subject: -1
-
-# Maximum number of consumers
-# -1 for unlimited
-max_consumers: -1
-`
+    // Maximum number of consumers
+    // -1 for unlimited
+    max_consumers: -1
+}`
 	sap.textArea.SetText(userFriendlyYAML, false)
 }
 
@@ -121,9 +122,24 @@ func (sap *StreamAddPage) setupInputCapture() {
 		if event.Key() == tcell.KeyEnter && event.Modifiers() == tcell.ModAlt {
 			yamlText := sap.textArea.GetText()
 			
-			// Parse the YAML into our config struct
+			// Parse JSON5 into a map
+			var jsonData map[string]interface{}
+			err := json5.Unmarshal([]byte(yamlText), &jsonData)
+			if err != nil {
+				sap.notify("Invalid JSON5 configuration: "+err.Error(), 3*time.Second, "error")
+				return nil
+			}
+
+			// Convert to regular JSON
+			jsonBytes, err := json.Marshal(jsonData)
+			if err != nil {
+				sap.notify("Error converting configuration: "+err.Error(), 3*time.Second, "error")
+				return nil
+			}
+
+			// Parse JSON into StreamConfig
 			var config nats.StreamConfig
-			err := yaml.Unmarshal([]byte(yamlText), &config)
+			err = json.Unmarshal(jsonBytes, &config)
 			if err != nil {
 				sap.notify("Invalid YAML configuration: "+err.Error(), 3*time.Second, "error")
 				return nil
