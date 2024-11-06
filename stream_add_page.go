@@ -109,7 +109,7 @@ func (sap *StreamAddPage) setupUI() {
     // -1 for unlimited
     max_consumers: -1
 }`
-	sap.textArea.SetText(userFriendlyYAML, false)
+	sap.textArea.SetText(userFriendlyJSON5, false)
 }
 
 func (sap *StreamAddPage) setupInputCapture() {
