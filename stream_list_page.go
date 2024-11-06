@@ -173,7 +173,7 @@ func (sp *StreamListPage) notify(message string, duration time.Duration, logLeve
 func (sp *StreamListPage) confirmDeleteStream(streamName string) {
 	modal := tview.NewModal().
 		SetText("Are you sure you want to delete stream '" + streamName + "'?").
-		SetButtons([]string{"Delete", "Cancel"}).
+		AddButtons([]string{"Delete", "Cancel"}).
 		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
 			if buttonLabel == "Delete" {
 				// Get JetStream context
@@ -193,6 +193,7 @@ func (sp *StreamListPage) confirmDeleteStream(streamName string) {
 				}
 			}
 			sp.app.SetRoot(sp, true)
+			go sp.app.Draw()
 		})
 
 	sp.app.SetRoot(modal, false)
