@@ -32,7 +32,7 @@ func NewConsumerListPage(app *tview.Application, data *ds.Data) *ConsumerListPag
 	headerRow1.AddItem(createTextView("Consumer List", tcell.ColorYellow), 0, 1, false)
 
 	headerRow2 := tview.NewFlex().SetDirection(tview.FlexColumn)
-	headerRow2.AddItem(createTextView("[a] Add [e] Edit [i] Info [DEL] Delete (press twice) [ESC] Back", tcell.ColorWhite), 0, 1, false)
+	headerRow2.AddItem(createTextView("[ESC] Back [a] Add [e] Edit [i] Info [DEL] Delete [ESC] Back", tcell.ColorWhite), 0, 1, false)
 
 	// Create consumer list
 	cp.consumerList = tview.NewList().
