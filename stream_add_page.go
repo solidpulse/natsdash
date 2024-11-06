@@ -247,13 +247,13 @@ func (sap *StreamAddPage) setupInputCapture() {
 				Replicas:         config.Replicas,
 			}
 
-			var err error
+			var err2 error
 			if sap.isEdit {
-				_, err = js.UpdateStream(&streamConfig)
+				_, err2 = js.UpdateStream(&streamConfig)
 			} else {
-				_, err = js.AddStream(&streamConfig)
+				_, err2 = js.AddStream(&streamConfig)
 			}
-			if err != nil {
+			if err2 != nil {
 				sap.notify("Failed to create stream: "+err.Error(), 3*time.Second, "error")
 				return nil
 			}
