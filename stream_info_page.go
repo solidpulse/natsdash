@@ -16,7 +16,6 @@ type StreamInfoPage struct {
 	Data       *ds.Data
 	textArea   *tview.TextArea
 	footerTxt  *tview.TextView
-	isEdit     bool
 	streamName string
 }
 
@@ -32,10 +31,6 @@ func NewStreamInfoPage(app *tview.Application, data *ds.Data) *StreamInfoPage {
 	return sap
 }
 
-func (sap *StreamInfoPage) setEditMode(name string) {
-	sap.isEdit = true
-	sap.streamName = name
-}
 
 func (sap *StreamInfoPage) setupUI() {
 	// Header
@@ -84,9 +79,6 @@ func (sap *StreamInfoPage) goBack() {
 }
 
 func (sap *StreamInfoPage) redraw(ctx *ds.Context) {
-	if !sap.isEdit {
-		return
-	}
 
 	// Connect to NATS
 	conn := ctx.Conn
