@@ -29,8 +29,6 @@ func NewConsumerListPage(app *tview.Application, data *ds.Data) *ConsumerListPag
 
 	// Create header
 	headerRow1 := tview.NewFlex().SetDirection(tview.FlexColumn)
-	headerRow1.AddItem(createTextView("Consumer List", tcell.ColorYellow), 0, 1, false)
-
 	headerRow2 := tview.NewFlex().SetDirection(tview.FlexColumn)
 	headerRow2.AddItem(createTextView("[ESC] Back [a] Add [e] Edit [i] Info [DEL] Delete [ESC] Back", tcell.ColorWhite), 0, 1, false)
 
@@ -41,6 +39,9 @@ func NewConsumerListPage(app *tview.Application, data *ds.Data) *ConsumerListPag
 		SetMainTextColor(tcell.ColorWhite).
 		SetSelectedTextColor(tcell.ColorBlack).
 		SetSelectedBackgroundColor(tcell.ColorWhite)
+	cp.consumerList.SetBorder(true)
+	cp.consumerList.SetBorderPadding(2, 0, 1, 1)
+	cp.consumerList.SetTitle("Consumers")
 
 	// Create footer
 	cp.footerTxt = createTextView("", tcell.ColorWhite)
@@ -60,7 +61,7 @@ func (cp *ConsumerListPage) setupInputCapture() {
 	cp.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyEsc:
-			cp.app.Stop()
+			cp.goBack()
 			return nil
 		case tcell.KeyDelete:
 			if cp.consumerList.GetItemCount() == 0 {
@@ -143,7 +144,29 @@ func (cp *ConsumerListPage) notify(message string, duration time.Duration, logLe
 func (cp *ConsumerListPage) redraw(ctx *ds.Context) {
 	cp.consumerList.Clear()
 
-	// TODO: Implement actual consumer list population
-	cp.consumerList.AddItem("Sample Consumer 1", "", 0, nil)
-	cp.consumerList.AddItem("Sample Consumer 2", "", 0, nil)
+	// Get JetStream context
+	js, err := ctx.Conn.JetStream()
+	if err != nil {
+		cp.notify("Failed to get JetStream context: "+err.Error(), 3*time.Second, "error")
+		return
+	}
+
+	consumersChan := js.Consumers(cp.streamName)
+	if err != nil {
+		cp.notify("Failed to get consumers: "+err.Error(), 3*time.Second, "error")
+		return
+	}
+
+	for consumer := range consumersChan {
+		cp.consumerList.AddItem(consumer.Name, "", 0, nil)
+	}
+	
+}
+
+
+func (cp *ConsumerListPage) goBack() {
+	pages.SwitchToPage("streamListPage")
+	_, b := pages.GetFrontPage()
+	b.(*StreamListPage).redraw(&cp.Data.CurrCtx)
+	cp.app.SetFocus(b) // Add this line
 }
