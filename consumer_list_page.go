@@ -85,7 +85,10 @@ func (cp *ConsumerListPage) setupInputCapture() {
 			switch event.Rune() {
 			case 'a', 'A':
 				logger.Info("Add consumer action triggered")
-				cp.notify("Add consumer functionality coming soon...", 3*time.Second, "info")
+				pages.SwitchToPage("consumerAddPage")
+				_, b := pages.GetFrontPage()
+				addPage := b.(*ConsumerAddPage)
+				addPage.redraw(&cp.Data.CurrCtx)
 			case 'e', 'E':
 				if cp.consumerList.GetItemCount() == 0 {
 					cp.notify("No consumer selected", 3*time.Second, "error")

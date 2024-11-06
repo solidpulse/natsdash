@@ -2,12 +2,13 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/nats-io/nats.go"
 	"github.com/rivo/tview"
 	"github.com/solidpulse/natsdash/ds"
-	"github.com/solidpulse/natsdash/logger"
 )
 
 type ConsumerAddPage struct {
@@ -33,8 +34,8 @@ func NewConsumerAddPage(app *tview.Application, data *ds.Data) *ConsumerAddPage 
 	headerRow.AddItem(createTextView("[ESC] Back [Alt+Enter] Save", tcell.ColorWhite), 0, 1, false)
 
 	// Create text area
-	cap.txtArea = tview.NewTextArea().
-		SetBorder(true)
+	cap.txtArea = tview.NewTextArea()
+	cap.txtArea.SetBorder(true)
 	
 	// Create footer
 	cap.footerTxt = createTextView("", tcell.ColorWhite)
@@ -152,7 +153,7 @@ func (cap *ConsumerAddPage) saveConsumer() {
 		return
 	}
 
-	cap.notify("Consumer saved successfully", 3*time.Second, "info")
+	cap.notify("Consumer "+consumer.Name+" saved successfully", 3*time.Second, "info")
 	
 	// Switch back to consumer list
 	pages.SwitchToPage("consumerListPage")
