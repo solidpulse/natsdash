@@ -1,6 +1,7 @@
 package main
 
 import (
+	"gopkg.in/yaml.v2"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
@@ -103,7 +104,15 @@ func (sap *StreamInfoPage) redraw(ctx *ds.Context) {
 		return
 	}
 
-	//convert to YAML
+	// Convert to YAML
+	yamlBytes, err := yaml.Marshal(stream.Config)
+	if err != nil {
+		sap.notify("Failed to convert to YAML: "+err.Error(), 3*time.Second, "error")
+		return
+	}
+	
+	yamlTxt := string(yamlBytes)
+	sap.textArea.SetText(yamlTxt, true)
     
 
 	sap.textArea.SetText(yamlTxt, true)
