@@ -37,7 +37,7 @@ func (sap *StreamAddPage) setupUI() {
 	// Header
 	headerRow := tview.NewFlex()
 	headerRow.SetDirection(tview.FlexColumn)
-	headerRow.SetBorderPadding(0, 0, 1, 1)
+	headerRow.SetBorderPadding(1, 0, 1, 1)
 
 	headerRow.AddItem(createTextView("[ESC] Back", tcell.ColorWhite), 0, 1, false)
 	headerRow.AddItem(createTextView("[Alt+Enter] Save", tcell.ColorWhite), 0, 1, false)
