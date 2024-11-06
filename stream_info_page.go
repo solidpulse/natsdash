@@ -50,7 +50,7 @@ func (sap *StreamInfoPage) setupUI() {
 	// Text area for YAML
 	sap.textArea = tview.NewTextArea()
 	sap.textArea.SetBorder(true)
-	sap.textArea.SetDisabled(true)
+	// sap.textArea.SetDisabled(true)
 	sap.textArea.SetTitle("Stream Info")
 	sap.AddItem(sap.textArea, 0, 1, true)
 
@@ -106,7 +106,7 @@ func (sap *StreamInfoPage) redraw(ctx *ds.Context) {
 	}
 
 	// First convert to JSON
-	jsonBytes, err := json.Marshal(stream.Config)
+	jsonBytes, err := json.Marshal(stream)
 	if err != nil {
 		sap.notify("Failed to convert to JSON: "+err.Error(), 3*time.Second, "error")
 		return
@@ -127,7 +127,7 @@ func (sap *StreamInfoPage) redraw(ctx *ds.Context) {
 	}
 
 	yamlTxt := string(yamlBytes)
-	sap.textArea.SetText(yamlTxt, true)
+	sap.textArea.SetText(yamlTxt, false)
 	go sap.app.Draw()
     
 }
