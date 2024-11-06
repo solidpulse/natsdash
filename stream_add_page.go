@@ -137,9 +137,70 @@ func (sap *StreamAddPage) setupInputCapture() {
 				return nil
 			}
 
-			// Parse JSON into StreamConfig
-			var config nats.StreamConfig
-			err = json.Unmarshal(jsonBytes, &config)
+			// First unmarshal into an intermediate struct that keeps max_age as string
+			var intermediateConfig struct {
+				Name              string   `json:"name"`
+				Description       string   `json:"description"`
+				Subjects         []string `json:"subjects"`
+				Retention        string   `json:"retention"`
+				MaxConsumers     int      `json:"max_consumers"`
+				MaxMsgs          int64    `json:"max_msgs"`
+				MaxBytes         int64    `json:"max_bytes"`
+				Discard          string   `json:"discard"`
+				MaxAge           string   `json:"max_age"`
+				MaxMsgsPerSubject int64    `json:"max_msgs_per_subject"`
+				MaxMsgSize       int32    `json:"max_msg_size"`
+				Storage          string   `json:"storage"`
+				Replicas         int      `json:"num_replicas"`
+			}
+			err = json.Unmarshal(jsonBytes, &intermediateConfig)
+			if err != nil {
+				sap.notify("Invalid configuration: "+err.Error(), 3*time.Second, "error")
+				return nil
+			}
+
+			// Parse duration string
+			maxAge, err := time.ParseDuration(intermediateConfig.MaxAge)
+			if err != nil {
+				sap.notify("Invalid max_age duration: "+err.Error(), 3*time.Second, "error")
+				return nil
+			}
+
+			// Convert string values to proper NATS types
+			retention, err := parseRetentionPolicy(intermediateConfig.Retention)
+			if err != nil {
+				sap.notify("Invalid retention policy: "+err.Error(), 3*time.Second, "error")
+				return nil
+			}
+
+			storage, err := parseStorageType(intermediateConfig.Storage)
+			if err != nil {
+				sap.notify("Invalid storage type: "+err.Error(), 3*time.Second, "error")
+				return nil
+			}
+
+			discard, err := parseDiscardPolicy(intermediateConfig.Discard)
+			if err != nil {
+				sap.notify("Invalid discard policy: "+err.Error(), 3*time.Second, "error")
+				return nil
+			}
+
+			// Create final config
+			config := nats.StreamConfig{
+				Name:              intermediateConfig.Name,
+				Description:       intermediateConfig.Description,
+				Subjects:         intermediateConfig.Subjects,
+				Retention:        retention,
+				MaxConsumers:     intermediateConfig.MaxConsumers,
+				MaxMsgs:          intermediateConfig.MaxMsgs,
+				MaxBytes:         intermediateConfig.MaxBytes,
+				Discard:          discard,
+				MaxAge:           maxAge,
+				MaxMsgsPerSubject: intermediateConfig.MaxMsgsPerSubject,
+				MaxMsgSize:       intermediateConfig.MaxMsgSize,
+				Storage:          storage,
+				Replicas:         intermediateConfig.Replicas,
+			}
 			if err != nil {
 				sap.notify("Invalid YAML configuration: "+err.Error(), 3*time.Second, "error")
 				return nil
@@ -214,3 +275,50 @@ func (sap *StreamAddPage) notify(message string, duration time.Duration, logLeve
 	}()
 }
 
+import (
+	"encoding/json"
+	"fmt"
+	"time"
+
+	"github.com/gdamore/tcell/v2"
+	"github.com/nats-io/nats.go"
+	"github.com/rivo/tview"
+	"github.com/solidpulse/natsdash/ds"
+	"github.com/solidpulse/natsdash/natsutil"
+	"github.com/yosuke-furukawa/json5/encoding/json5"
+)
+
+func parseRetentionPolicy(s string) (nats.RetentionPolicy, error) {
+	switch s {
+	case "limits":
+		return nats.LimitsPolicy, nil
+	case "interest":
+		return nats.InterestPolicy, nil
+	case "workqueue":
+		return nats.WorkQueuePolicy, nil
+	default:
+		return 0, fmt.Errorf("unknown retention policy: %s", s)
+	}
+}
+
+func parseStorageType(s string) (nats.StorageType, error) {
+	switch s {
+	case "file":
+		return nats.FileStorage, nil
+	case "memory":
+		return nats.MemoryStorage, nil
+	default:
+		return 0, fmt.Errorf("unknown storage type: %s", s)
+	}
+}
+
+func parseDiscardPolicy(s string) (nats.DiscardPolicy, error) {
+	switch s {
+	case "old":
+		return nats.DiscardOld, nil
+	case "new":
+		return nats.DiscardNew, nil
+	default:
+		return 0, fmt.Errorf("unknown discard policy: %s", s)
+	}
+}
