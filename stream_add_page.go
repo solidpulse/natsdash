@@ -10,7 +10,6 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/rivo/tview"
 	"github.com/solidpulse/natsdash/ds"
-	"github.com/solidpulse/natsdash/natsutil"
 	"github.com/yosuke-furukawa/json5/encoding/json5"
 )
 
@@ -216,12 +215,7 @@ func (sap *StreamAddPage) setupInputCapture() {
 			}
 
 			// Connect to NATS
-			conn, err := natsutil.Connect(&sap.Data.CurrCtx.CtxData)
-			if err != nil {
-				sap.notify("Failed to connect to NATS: "+err.Error(), 3*time.Second, "error")
-				return nil
-			}
-			defer conn.Close()
+			conn := sap.Data.CurrCtx.Conn
 
 			// Get JetStream context
 			js, err := conn.JetStream()
