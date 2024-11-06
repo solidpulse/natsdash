@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"time"
+	"fmt"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/nats-io/nats.go"
@@ -275,18 +276,7 @@ func (sap *StreamAddPage) notify(message string, duration time.Duration, logLeve
 	}()
 }
 
-import (
-	"encoding/json"
-	"fmt"
-	"time"
 
-	"github.com/gdamore/tcell/v2"
-	"github.com/nats-io/nats.go"
-	"github.com/rivo/tview"
-	"github.com/solidpulse/natsdash/ds"
-	"github.com/solidpulse/natsdash/natsutil"
-	"github.com/yosuke-furukawa/json5/encoding/json5"
-)
 
 func parseRetentionPolicy(s string) (nats.RetentionPolicy, error) {
 	switch s {
