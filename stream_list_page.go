@@ -7,7 +7,6 @@ import (
 	"github.com/rivo/tview"
 	"github.com/solidpulse/natsdash/ds"
 	"github.com/solidpulse/natsdash/logger"
-	"github.com/solidpulse/natsdash/natsutil"
 )
 
 type StreamListPage struct {
@@ -65,13 +64,7 @@ func (sp *StreamListPage) redraw(ctx *ds.Context) {
     sp.streamList.Clear()
     
     // Connect to NATS
-    conn, err := natsutil.Connect(&ctx.CtxData)
-    if err != nil {
-        logger.Error("Failed to connect to NATS server: %v", err)
-        sp.notify("Failed to connect to NATS server", 3*time.Second, "error")
-        return
-    }
-    defer conn.Close() // Ensure connection is closed when we're done
+    conn := ctx.Conn
 
     // Get JetStream context
     js, err := conn.JetStream()
@@ -118,7 +111,8 @@ func (sp *StreamListPage) setupInputCapture() {
 				sp.notify("No stream selected", 3*time.Second, "error")
 				return event
 			}
-			streamName := sp.streamList.GetCurrentItem().MainText
+			idx := sp.streamList.GetCurrentItem()
+			streamName,_ := sp.streamList.GetItemText(idx)
 			logger.Info("Edit stream action triggered for: %s", streamName)
 			pages.SwitchToPage("streamAddPage")
 			_, b := pages.GetFrontPage()

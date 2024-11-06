@@ -169,9 +169,38 @@ func (cp *ContextPage) setupInputCapture() {
 		} else if event.Rune() == 'j' || event.Rune() == 'J' {
 			idx := cp.ctxListView.GetCurrentItem()
 			data.CurrCtx = cp.Data.Contexts[idx]
-			pages.SwitchToPage("streamListPage")
-			_, b := pages.GetFrontPage()
-			b.(*StreamListPage).redraw(&data.CurrCtx)
+
+			go func() {
+				cp.notify("Connecting to NATS...", 5*time.Second, "info")
+				conn, err := natsutil.Connect(&data.CurrCtx.CtxData)
+				if err != nil {
+					cp.notify(fmt.Sprintf("Error connecting to NATS: %s", err.Error()), 5*time.Second, "error")
+					return
+				}
+				data.CurrCtx.Conn = conn
+
+				// Open log file
+				currentTime := time.Now().Format("2006-01-02")
+				logFilePath := path.Join(os.TempDir(), "natsdash", fmt.Sprintf("%s_%s.log", currentTime, data.CurrCtx.Name[:4]))
+				logDir := path.Dir(logFilePath)
+				if err := os.MkdirAll(logDir, 0755); err != nil {
+					cp.notify(fmt.Sprintf("Error creating log directory: %s", err.Error()), 5*time.Second, "error")
+					return
+				}
+				logFile, err := os.OpenFile(logFilePath, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0644)
+				if err != nil {
+					cp.notify(fmt.Sprintf("Error opening log file: %s", err.Error()), 5*time.Second, "error")
+					return
+				}
+				data.CurrCtx.LogFilePath = logFilePath
+				data.CurrCtx.LogFile = logFile
+				logFile.WriteString("Connected to NATS. ClusterName: " + conn.ConnectedClusterName() +
+					" ServerID: " + conn.ConnectedServerId() + "\n")
+					pages.SwitchToPage("streamListPage")
+					_, b := pages.GetFrontPage()
+				b.(*StreamListPage).redraw(&data.CurrCtx)
+
+			}()
 		} else if event.Rune() == 'n' || event.Rune() == 'N' {
 			idx := cp.ctxListView.GetCurrentItem()
 			if len(cp.Data.Contexts) == 0 {

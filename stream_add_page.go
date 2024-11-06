@@ -254,7 +254,7 @@ func (sap *StreamAddPage) setupInputCapture() {
 				_, err2 = js.AddStream(&streamConfig)
 			}
 			if err2 != nil {
-				sap.notify("Failed to create stream: "+err.Error(), 3*time.Second, "error")
+				sap.notify("Failed to create stream: "+err2.Error(), 3*time.Second, "error")
 				return nil
 			}
 
@@ -279,12 +279,7 @@ func (sap *StreamAddPage) redraw(ctx *ds.Context) {
 	}
 
 	// Connect to NATS
-	conn, err := natsutil.Connect(&ctx.CtxData)
-	if err != nil {
-		sap.notify("Failed to connect to NATS: "+err.Error(), 3*time.Second, "error")
-		return
-	}
-	defer conn.Close()
+	conn := ctx.Conn
 
 	// Get JetStream context
 	js, err := conn.JetStream()
