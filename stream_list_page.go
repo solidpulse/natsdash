@@ -137,7 +137,7 @@ func (sp *StreamListPage) setupInputCapture() {
 			infoPage := b.(*StreamInfoPage)
 			infoPage.streamName = streamName
 			infoPage.redraw(&sp.Data.CurrCtx)
-		case tcell.KeyDelete:
+		case 'd', 'D': 
 			if sp.streamList.GetItemCount() == 0 {
 				sp.notify("No stream selected", 3*time.Second, "error")
 				return event
@@ -184,7 +184,7 @@ func (sp *StreamListPage) notify(message string, duration time.Duration, logLeve
 
 func (sp *StreamListPage) startDeleteConfirmation(streamName string) {
 	sp.deleteConfirmStream = streamName
-	sp.notify("Press DEL again within 10 seconds to confirm deletion of '"+streamName+"'", 10*time.Second, "warning")
+	sp.notify("Press d again within 10 seconds to confirm deletion of '"+streamName+"'", 10*time.Second, "warning")
 	
 	// Cancel any existing timer
 	if sp.deleteConfirmTimer != nil {
@@ -238,7 +238,7 @@ func createStreamListHeaderRow() *tview.Flex {
 	headerRow2.SetBorder(false)
 
 	headerRow2.AddItem(createTextView("[i] Info", tcell.ColorWhite), 0, 1, false)
-	headerRow2.AddItem(createTextView("[DEL] Delete (press twice)", tcell.ColorWhite), 0, 1, false)
+	headerRow2.AddItem(createTextView("[d] Delete", tcell.ColorWhite), 0, 1, false)
 	headerRow2.AddItem(createTextView("", tcell.ColorWhite), 0, 1, false)
 
 	headerRow.AddItem(headerRow1, 0, 1, false)
