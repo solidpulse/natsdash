@@ -114,8 +114,17 @@ func (sp *StreamListPage) setupInputCapture() {
 			_, b := pages.GetFrontPage()
 			b.(*StreamAddPage).redraw(&data.CurrCtx)
 		case 'e', 'E':
-			logger.Info("Edit stream action triggered")
-			sp.notify("Edit stream functionality coming soon...", 3*time.Second, "info")
+			if sp.streamList.GetItemCount() == 0 {
+				sp.notify("No stream selected", 3*time.Second, "error")
+				return event
+			}
+			streamName := sp.streamList.GetCurrentItem().MainText
+			logger.Info("Edit stream action triggered for: %s", streamName)
+			pages.SwitchToPage("streamAddPage")
+			_, b := pages.GetFrontPage()
+			addPage := b.(*StreamAddPage)
+			addPage.setEditMode(streamName)
+			addPage.redraw(&sp.Data.CurrCtx)
 		case 'i', 'I':
 			logger.Info("Stream info action triggered")
 			sp.notify("Stream info functionality coming soon...", 3*time.Second, "info")

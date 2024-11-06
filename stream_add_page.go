@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"time"
 	"fmt"
+	"strings"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/nats-io/nats.go"
@@ -19,6 +20,8 @@ type StreamAddPage struct {
 	Data      *ds.Data
 	textArea  *tview.TextArea
 	footerTxt *tview.TextView
+	isEdit    bool
+	streamName string
 }
 
 func NewStreamAddPage(app *tview.Application, data *ds.Data) *StreamAddPage {
@@ -33,6 +36,11 @@ func NewStreamAddPage(app *tview.Application, data *ds.Data) *StreamAddPage {
 	return sap
 }
 
+func (sap *StreamAddPage) setEditMode(name string) {
+	sap.isEdit = true
+	sap.streamName = name
+}
+
 func (sap *StreamAddPage) setupUI() {
 	// Header
 	headerRow := tview.NewFlex()
@@ -41,7 +49,7 @@ func (sap *StreamAddPage) setupUI() {
 
 	headerRow.AddItem(createTextView("[ESC] Back", tcell.ColorWhite), 0, 1, false)
 	headerRow.AddItem(createTextView("[Alt+Enter] Save", tcell.ColorWhite), 0, 1, false)
-	headerRow.SetTitle("ADD STREAM")
+	headerRow.SetTitle("STREAM CONFIGURATION")
 	sap.AddItem(headerRow, 3, 1, false)
 
 	// Text area for YAML
@@ -239,8 +247,12 @@ func (sap *StreamAddPage) setupInputCapture() {
 				Replicas:         config.Replicas,
 			}
 
-			// Create the stream
-			_, err = js.AddStream(&streamConfig)
+			var err error
+			if sap.isEdit {
+				_, err = js.UpdateStream(&streamConfig)
+			} else {
+				_, err = js.AddStream(&streamConfig)
+			}
 			if err != nil {
 				sap.notify("Failed to create stream: "+err.Error(), 3*time.Second, "error")
 				return nil
@@ -262,6 +274,138 @@ func (sap *StreamAddPage) goBack() {
 }
 
 func (sap *StreamAddPage) redraw(ctx *ds.Context) {
+	if !sap.isEdit {
+		return
+	}
+
+	// Connect to NATS
+	conn, err := natsutil.Connect(&ctx.CtxData)
+	if err != nil {
+		sap.notify("Failed to connect to NATS: "+err.Error(), 3*time.Second, "error")
+		return
+	}
+	defer conn.Close()
+
+	// Get JetStream context
+	js, err := conn.JetStream()
+	if err != nil {
+		sap.notify("Failed to get JetStream context: "+err.Error(), 3*time.Second, "error")
+		return
+	}
+
+	// Get stream info
+	stream, err := js.StreamInfo(sap.streamName)
+	if err != nil {
+		sap.notify("Failed to get stream info: "+err.Error(), 3*time.Second, "error")
+		return
+	}
+
+	// Convert the config to our intermediate format
+	config := struct {
+		Name              string   `json:"name"`
+		Description       string   `json:"description"`
+		Subjects         []string `json:"subjects"`
+		Retention        string   `json:"retention"`
+		MaxConsumers     int      `json:"max_consumers"`
+		MaxMsgs          int64    `json:"max_msgs"`
+		MaxBytes         int64    `json:"max_bytes"`
+		Discard          string   `json:"discard"`
+		MaxAge           string   `json:"max_age"`
+		MaxMsgsPerSubject int64    `json:"max_msgs_per_subject"`
+		MaxMsgSize       int32    `json:"max_msg_size"`
+		Storage          string   `json:"storage"`
+		Replicas         int      `json:"num_replicas"`
+	}{
+		Name:              stream.Config.Name,
+		Description:       stream.Config.Description,
+		Subjects:         stream.Config.Subjects,
+		Retention:        retentionPolicyToString(stream.Config.Retention),
+		MaxConsumers:     stream.Config.MaxConsumers,
+		MaxMsgs:          stream.Config.MaxMsgs,
+		MaxBytes:         stream.Config.MaxBytes,
+		Discard:          discardPolicyToString(stream.Config.Discard),
+		MaxAge:           stream.Config.MaxAge.String(),
+		MaxMsgsPerSubject: stream.Config.MaxMsgsPerSubject,
+		MaxMsgSize:       stream.Config.MaxMsgSize,
+		Storage:          storageTypeToString(stream.Config.Storage),
+		Replicas:         stream.Config.Replicas,
+	}
+
+	// Convert to JSON5 format with comments
+	configJSON, err := json.MarshalIndent(config, "", "    ")
+	if err != nil {
+		sap.notify("Failed to marshal config: "+err.Error(), 3*time.Second, "error")
+		return
+	}
+
+	// Add comments to the JSON
+	configWithComments := fmt.Sprintf(`{
+    // Name of the stream (required)
+    name: %q,
+
+    // Description of the stream (optional)
+    description: %q,
+
+    // Subjects that messages can be published to (required)
+    // Examples: ["orders.*", "shipping.>", "customer.orders.*"]
+    subjects: %s,
+
+    // Storage backend (required)
+    // Possible values: "file", "memory"
+    storage: %q,
+
+    // Number of replicas for the stream
+    // Range: 1-5
+    num_replicas: %d,
+
+    // Retention policy (required)
+    // Possible values: "limits", "interest", "workqueue"
+    retention: %q,
+
+    // Discard policy when limits are reached
+    // Possible values: "old", "new"
+    discard: %q,
+
+    // Maximum number of messages in the stream
+    // -1 for unlimited
+    max_msgs: %d,
+
+    // Maximum number of bytes in the stream
+    // -1 for unlimited
+    max_bytes: %d,
+
+    // Maximum age of messages
+    // Examples: "24h", "7d", "1y"
+    max_age: %q,
+
+    // Maximum message size in bytes
+    // -1 for unlimited
+    max_msg_size: %d,
+
+    // Maximum number of messages per subject
+    // -1 for unlimited
+    max_msgs_per_subject: %d,
+
+    // Maximum number of consumers
+    // -1 for unlimited
+    max_consumers: %d
+}`,
+		config.Name,
+		config.Description,
+		prettyPrintSubjects(config.Subjects),
+		config.Storage,
+		config.Replicas,
+		config.Retention,
+		config.Discard,
+		config.MaxMsgs,
+		config.MaxBytes,
+		config.MaxAge,
+		config.MaxMsgSize,
+		config.MaxMsgsPerSubject,
+		config.MaxConsumers,
+	)
+
+	sap.textArea.SetText(configWithComments, true)
 
 }
 
@@ -311,4 +455,57 @@ func parseDiscardPolicy(s string) (nats.DiscardPolicy, error) {
 	default:
 		return 0, fmt.Errorf("unknown discard policy: %s", s)
 	}
+}
+func retentionPolicyToString(p nats.RetentionPolicy) string {
+	switch p {
+	case nats.LimitsPolicy:
+		return "limits"
+	case nats.InterestPolicy:
+		return "interest"
+	case nats.WorkQueuePolicy:
+		return "workqueue"
+	default:
+		return "unknown"
+	}
+}
+
+func storageTypeToString(s nats.StorageType) string {
+	switch s {
+	case nats.FileStorage:
+		return "file"
+	case nats.MemoryStorage:
+		return "memory"
+	default:
+		return "unknown"
+	}
+}
+
+func discardPolicyToString(d nats.DiscardPolicy) string {
+	switch d {
+	case nats.DiscardOld:
+		return "old"
+	case nats.DiscardNew:
+		return "new"
+	default:
+		return "unknown"
+	}
+}
+
+func prettyPrintSubjects(subjects []string) string {
+	if len(subjects) == 0 {
+		return "[]"
+	}
+	if len(subjects) == 1 {
+		return fmt.Sprintf("[\n        %q\n    ]", subjects[0])
+	}
+	var sb strings.Builder
+	sb.WriteString("[\n")
+	for i, subject := range subjects {
+		sb.WriteString(fmt.Sprintf("        %q", subject))
+		if i < len(subjects)-1 {
+			sb.WriteString(",\n")
+		}
+	}
+	sb.WriteString("\n    ]")
+	return sb.String()
 }
