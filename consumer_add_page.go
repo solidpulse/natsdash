@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
@@ -84,12 +83,11 @@ func (cap *ConsumerAddPage) redraw(ctx *ds.Context) {
 		// Set default template for new consumer
 		defaultConfig := `{
     // Name of the consumer (required)
-    // Will be set automatically from previous screen
-    "name": "",
+    "name": "new-consumer-Name",
 
     // Durable name for the consumer (optional)
     // Makes this a durable consumer that survives restarts
-    "durable_name": "NEW",
+    "durable_name": "NEW-consumer-Name",
 
     // Pull mode configuration (optional)
     // true: pull-based / false: push-based
