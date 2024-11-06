@@ -137,6 +137,20 @@ func (sp *StreamListPage) setupInputCapture() {
 			infoPage := b.(*StreamInfoPage)
 			infoPage.streamName = streamName
 			infoPage.redraw(&sp.Data.CurrCtx)
+		case 'c', 'C':
+			logger.Info("Consumer List action triggered")
+			if sp.streamList.GetItemCount() == 0 {
+				sp.notify("No stream selected", 3*time.Second, "error")
+				return event
+			}
+			idx := sp.streamList.GetCurrentItem()
+			streamName, _ := sp.streamList.GetItemText(idx)
+			logger.Info("Stream info action triggered for: %s", streamName)
+			pages.SwitchToPage("consumerListPage")
+			_, b := pages.GetFrontPage()
+			infoPage := b.(*ConsumerListPage)
+			infoPage.streamName = streamName
+			infoPage.redraw(&sp.Data.CurrCtx)
 		case 'd', 'D': 
 			if sp.streamList.GetItemCount() == 0 {
 				sp.notify("No stream selected", 3*time.Second, "error")
@@ -238,8 +252,8 @@ func createStreamListHeaderRow() *tview.Flex {
 	headerRow2.SetBorder(false)
 
 	headerRow2.AddItem(createTextView("[i] Info", tcell.ColorWhite), 0, 1, false)
+	headerRow2.AddItem(createTextView("[c] Consumers", tcell.ColorWhite), 0, 1, false)
 	headerRow2.AddItem(createTextView("[d] Delete", tcell.ColorWhite), 0, 1, false)
-	headerRow2.AddItem(createTextView("", tcell.ColorWhite), 0, 1, false)
 
 	headerRow.AddItem(headerRow1, 0, 1, false)
 	headerRow.AddItem(headerRow2, 0, 1, false)
