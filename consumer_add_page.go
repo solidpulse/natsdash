@@ -12,83 +12,82 @@ import (
 
 type ConsumerAddPage struct {
 	*tview.Flex
-	Data           *ds.Data
-	consumerList   *tview.List
-	app            *tview.Application
-	txtArea       *tview.TextArea
-	footerTxt      *tview.TextView
-	streamName       string
-	consumerName     string
-	editMode       bool
+	Data         *ds.Data
+	app          *tview.Application
+	txtArea      *tview.TextArea
+	footerTxt    *tview.TextView
+	streamName   string
+	consumerName string
+	isEdit       bool
 }
 
 func NewConsumerAddPage(app *tview.Application, data *ds.Data) *ConsumerAddPage {
-	cp := &ConsumerAddPage{
+	cap := &ConsumerAddPage{
 		Flex: tview.NewFlex().SetDirection(tview.FlexRow),
 		app:  app,
 		Data: data,
 	}
 
 	// Create header
-	headerRow1 := tview.NewFlex().SetDirection(tview.FlexColumn)
-	headerRow1.AddItem(createTextView("Consumer List", tcell.ColorYellow), 0, 1, false)
+	headerRow := tview.NewFlex().SetDirection(tview.FlexColumn)
+	headerRow.AddItem(createTextView("[ESC] Back [Alt+Enter] Save", tcell.ColorWhite), 0, 1, false)
 
-	headerRow2 := tview.NewFlex().SetDirection(tview.FlexColumn)
-	headerRow2.AddItem(createTextView("[ESC] Back [alt+Enter] Save ", tcell.ColorWhite), 0, 1, false)
+	// Create text area
+	cap.txtArea = tview.NewTextArea().
+		SetBorder(true)
+	
+	// Create footer
+	cap.footerTxt = createTextView("", tcell.ColorWhite)
 
-	// txtarea
-	cp.txtArea = tview.NewTextArea()
-	cp.txtArea.SetBorder(true)
-	cp.txtArea.SetTitle("Consumer Configuration (JSON5)")
-	cp.txtArea.SetBorder(true)
-	cp.txtArea.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyEsc {
-			cp.goBack()
-			return nil
-		}
-		return event
-	})
-	cp.AddItem(cp.txtArea, 0, 1, true)
+	// Add all components
+	cap.AddItem(headerRow, 1, 0, false).
+		AddItem(cap.txtArea, 0, 1, true).
+		AddItem(cap.footerTxt, 1, 0, false)
 
-	// Footer
-	footer := tview.NewFlex()
-	footer.SetBorder(true)
-	footer.SetDirection(tview.FlexRow)
-	footer.AddItem(cp.footerTxt, 0, 1, false)
-	cp.AddItem(footer, 3, 1, false)
+	cap.setupInputCapture()
 
-	cp.SetBorderPadding(1, 1, 1, 1)
-
-	return cp
+	return cap
 }
 
-func (cp *ConsumerAddPage) redraw(ctx *ds.Context) {
-	//get the consumer details if edit
-	if cp.editMode {
-		// Connect to NATS
-		conn := ctx.Conn
+func (cap *ConsumerAddPage) redraw(ctx *ds.Context) {
+	// Update the title based on mode
+	title := "Add Consumer"
+	if cap.isEdit {
+		title = "Edit Consumer: " + cap.consumerName
+	}
+	cap.txtArea.SetTitle(title)
 
-		// Get JetStream context
-		js, err := conn.JetStream()
+	if cap.isEdit {
+		// Get existing consumer config
+		js, err := ctx.Conn.JetStream()
 		if err != nil {
-			cp.notify("Failed to get JetStream context: "+err.Error(), 3*time.Second, "error")
+			cap.notify("Failed to get JetStream context: "+err.Error(), 3*time.Second, "error")
 			return
 		}
 
-		// Get stream info
-		consumerInfo, err := js.ConsumerInfo(cp.streamName, cp.consumerName)
+		consumer, err := js.ConsumerInfo(cap.streamName, cap.consumerName)
 		if err != nil {
-			cp.notify("Failed to get consumer info: "+err.Error(), 3*time.Second, "error")
+			cap.notify("Failed to get consumer info: "+err.Error(), 3*time.Second, "error")
 			return
 		}
 
-		// Convert to JSON5
-	
-		// cp.txtArea.SetText(jsonStr, false)
-		go cp.app.Draw()
-	}else{
-		//TODO: sensible defaults in the txtArea in JSON5
-		cp.txtArea.SetText("", false)
+		// Convert to JSON
+		jsonBytes, err := json.MarshalIndent(consumer.Config, "", "    ")
+		if err != nil {
+			cap.notify("Failed to convert config to JSON: "+err.Error(), 3*time.Second, "error")
+			return
+		}
+
+		cap.txtArea.SetText(string(jsonBytes), true)
+	} else {
+		// Set default template for new consumer
+		defaultConfig := fmt.Sprintf(`{
+    "deliver_policy": "all",
+    "ack_policy": "explicit",
+    "replay_policy": "instant",
+    "max_deliver": 1
+}`)
+		cap.txtArea.SetText(defaultConfig, true)
 	}
 }
 	
@@ -108,4 +107,56 @@ func (cp *ConsumerAddPage) notify(message string, duration time.Duration, logLev
 		cp.footerTxt.SetText("")
 		cp.footerTxt.SetTextColor(tcell.ColorWhite)
 	}()
+}
+func (cap *ConsumerAddPage) setupInputCapture() {
+	cap.txtArea.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyEsc {
+			pages.SwitchToPage("consumerListPage")
+			return nil
+		}
+		if event.Key() == tcell.KeyEnter && event.Modifiers() == tcell.ModAlt {
+			cap.saveConsumer()
+			return nil
+		}
+		return event
+	})
+}
+func (cap *ConsumerAddPage) saveConsumer() {
+	// Get JetStream context
+	js, err := cap.Data.CurrCtx.Conn.JetStream()
+	if err != nil {
+		cap.notify("Failed to get JetStream context: "+err.Error(), 3*time.Second, "error")
+		return
+	}
+
+	// Parse the configuration
+	var config nats.ConsumerConfig
+	if err := json.Unmarshal([]byte(cap.txtArea.GetText()), &config); err != nil {
+		cap.notify("Invalid configuration: "+err.Error(), 3*time.Second, "error")
+		return
+	}
+
+	// Set the name from the previous screen
+	config.Name = cap.consumerName
+
+	// Create or update the consumer
+	var consumer *nats.ConsumerInfo
+	if cap.isEdit {
+		consumer, err = js.UpdateConsumer(cap.streamName, &config)
+	} else {
+		consumer, err = js.AddConsumer(cap.streamName, &config)
+	}
+
+	if err != nil {
+		cap.notify("Failed to save consumer: "+err.Error(), 3*time.Second, "error")
+		return
+	}
+
+	cap.notify("Consumer saved successfully", 3*time.Second, "info")
+	
+	// Switch back to consumer list
+	pages.SwitchToPage("consumerListPage")
+	_, p := pages.GetFrontPage()
+	listPage := p.(*ConsumerListPage)
+	listPage.redraw(&cap.Data.CurrCtx)
 }
