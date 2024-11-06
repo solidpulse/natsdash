@@ -15,6 +15,8 @@ type StreamListPage struct {
 	streamList   *tview.List
 	app          *tview.Application
 	footerTxt    *tview.TextView
+	deleteConfirmStream string    // stream pending deletion
+	deleteConfirmTimer  *time.Timer
 }
 
 func NewStreamListPage(app *tview.Application, data *ds.Data) *StreamListPage {
@@ -135,15 +137,25 @@ func (sp *StreamListPage) setupInputCapture() {
 			infoPage := b.(*StreamInfoPage)
 			infoPage.streamName = streamName
 			infoPage.redraw(&sp.Data.CurrCtx)
-		case 'd', 'D':
+		case tcell.KeyDelete:
 			if sp.streamList.GetItemCount() == 0 {
 				sp.notify("No stream selected", 3*time.Second, "error")
 				return event
 			}
 			idx := sp.streamList.GetCurrentItem()
 			streamName, _ := sp.streamList.GetItemText(idx)
-			logger.Info("Delete stream action triggered for: %s", streamName)
-			sp.confirmDeleteStream(streamName)
+			
+			if sp.deleteConfirmStream == streamName {
+				// Second press - execute delete
+				sp.deleteConfirmTimer.Stop()
+				sp.deleteConfirmStream = ""
+				sp.executeDelete(streamName)
+			} else {
+				// First press - start confirmation
+				logger.Info("Delete stream action triggered for: %s", streamName)
+				sp.startDeleteConfirmation(streamName)
+			}
+			return nil
 		}
 		return event
 	})
@@ -170,33 +182,40 @@ func (sp *StreamListPage) notify(message string, duration time.Duration, logLeve
 	}()
 }
 
-func (sp *StreamListPage) confirmDeleteStream(streamName string) {
-	modal := tview.NewModal().
-		SetText("Are you sure you want to delete stream '" + streamName + "'?").
-		AddButtons([]string{"Delete", "Cancel"}).
-		SetDoneFunc(func(buttonIndex int, buttonLabel string) {
-			if buttonLabel == "Delete" {
-				// Get JetStream context
-				js, err := sp.Data.CurrCtx.Conn.JetStream()
-				if err != nil {
-					sp.notify("Failed to get JetStream context: "+err.Error(), 3*time.Second, "error")
-					return
-				}
+func (sp *StreamListPage) startDeleteConfirmation(streamName string) {
+	sp.deleteConfirmStream = streamName
+	sp.notify("Press DEL again within 10 seconds to confirm deletion of '"+streamName+"'", 10*time.Second, "warning")
+	
+	// Cancel any existing timer
+	if sp.deleteConfirmTimer != nil {
+		sp.deleteConfirmTimer.Stop()
+	}
+	
+	// Start new timer
+	sp.deleteConfirmTimer = time.NewTimer(10 * time.Second)
+	go func() {
+		<-sp.deleteConfirmTimer.C
+		sp.deleteConfirmStream = ""
+		sp.notify("Delete confirmation timed out", 3*time.Second, "info")
+	}()
+}
 
-				// Delete the stream
-				err = js.DeleteStream(streamName)
-				if err != nil {
-					sp.notify("Failed to delete stream: "+err.Error(), 3*time.Second, "error")
-				} else {
-					sp.notify("Stream '"+streamName+"' deleted successfully", 3*time.Second, "info")
-					sp.redraw(&sp.Data.CurrCtx)
-				}
-			}
-			sp.app.SetRoot(sp, true)
-			go sp.app.Draw()
-		})
+func (sp *StreamListPage) executeDelete(streamName string) {
+	// Get JetStream context
+	js, err := sp.Data.CurrCtx.Conn.JetStream()
+	if err != nil {
+		sp.notify("Failed to get JetStream context: "+err.Error(), 3*time.Second, "error")
+		return
+	}
 
-	sp.app.SetRoot(modal, false)
+	// Delete the stream
+	err = js.DeleteStream(streamName)
+	if err != nil {
+		sp.notify("Failed to delete stream: "+err.Error(), 3*time.Second, "error")
+	} else {
+		sp.notify("Stream '"+streamName+"' deleted successfully", 3*time.Second, "info")
+		sp.redraw(&sp.Data.CurrCtx)
+	}
 }
 
 func createStreamListHeaderRow() *tview.Flex {
@@ -219,7 +238,7 @@ func createStreamListHeaderRow() *tview.Flex {
 	headerRow2.SetBorder(false)
 
 	headerRow2.AddItem(createTextView("[i] Info", tcell.ColorWhite), 0, 1, false)
-	headerRow2.AddItem(createTextView("[DEL] Delete", tcell.ColorWhite), 0, 1, false)
+	headerRow2.AddItem(createTextView("[DEL] Delete (press twice)", tcell.ColorWhite), 0, 1, false)
 	headerRow2.AddItem(createTextView("", tcell.ColorWhite), 0, 1, false)
 
 	headerRow.AddItem(headerRow1, 0, 1, false)
