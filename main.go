@@ -26,6 +26,7 @@ func main() {
 	StreamAddPage := NewStreamAddPage(app, data)
 	StreamInfoPage := NewStreamInfoPage(app, data)
 	ConsumerListPage := NewConsumerListPage(app, data)
+	ConsumerAddPage := NewConsumerAddPage(app, data)
 
 	pages.AddPage("natsPage", natsPage, true, false)
 	pages.AddPage("streamListPage", streamListPage, true, false)
