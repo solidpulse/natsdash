@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"gopkg.in/yaml.v2"
 	"time"
 
@@ -104,13 +105,27 @@ func (sap *StreamInfoPage) redraw(ctx *ds.Context) {
 		return
 	}
 
+	// First convert to JSON
+	jsonBytes, err := json.Marshal(stream.Config)
+	if err != nil {
+		sap.notify("Failed to convert to JSON: "+err.Error(), 3*time.Second, "error")
+		return
+	}
+
+	// Parse JSON into generic map
+	var jsonData interface{}
+	if err := json.Unmarshal(jsonBytes, &jsonData); err != nil {
+		sap.notify("Failed to parse JSON: "+err.Error(), 3*time.Second, "error")
+		return
+	}
+
 	// Convert to YAML
-	yamlBytes, err := yaml.Marshal(stream.Config)
+	yamlBytes, err := yaml.Marshal(jsonData)
 	if err != nil {
 		sap.notify("Failed to convert to YAML: "+err.Error(), 3*time.Second, "error")
 		return
 	}
-	
+
 	yamlTxt := string(yamlBytes)
 	sap.textArea.SetText(yamlTxt, true)
 	go sap.app.Draw()
