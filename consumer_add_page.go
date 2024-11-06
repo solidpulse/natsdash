@@ -76,23 +76,18 @@ func (cp *ConsumerAddPage) redraw(ctx *ds.Context) {
 		}
 
 		// Get stream info
-		stream, err := js.ConsumerInfo(cp.streamName, cp.consumerName)
+		consumerInfo, err := js.ConsumerInfo(cp.streamName, cp.consumerName)
 		if err != nil {
 			cp.notify("Failed to get consumer info: "+err.Error(), 3*time.Second, "error")
 			return
 		}
 
-		// Convert to JSON
-		jsonBytes, err := json.Marshal(stream.Config)
-		if err != nil {
-			cp.notify("Failed to convert to JSON: "+err.Error(), 3*time.Second, "error")
-			return
-		}
-
-		jsonStr := string(jsonBytes)
-		cp.txtArea.SetText(jsonStr, false)
+		// Convert to JSON5
+	
+		// cp.txtArea.SetText(jsonStr, false)
 		go cp.app.Draw()
 	}else{
+		//TODO: sensible defaults in the txtArea in JSON5
 		cp.txtArea.SetText("", false)
 	}
 }
