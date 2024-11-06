@@ -7,6 +7,7 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/rivo/tview"
 	"github.com/solidpulse/natsdash/ds"
+	"github.com/solidpulse/natsdash/natsutil"
 	"gopkg.in/yaml.v3"
 )
 
@@ -121,7 +122,7 @@ func (sap *StreamAddPage) setupInputCapture() {
 			yamlText := sap.textArea.GetText()
 			
 			// Parse the YAML into our config struct
-			var config StreamConfig
+			var config nats.StreamConfig
 			err := yaml.Unmarshal([]byte(yamlText), &config)
 			if err != nil {
 				sap.notify("Invalid YAML configuration: "+err.Error(), 3*time.Second, "error")
