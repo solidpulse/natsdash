@@ -331,14 +331,7 @@ func (sap *StreamAddPage) redraw(ctx *ds.Context) {
 		Replicas:         stream.Config.Replicas,
 	}
 
-	// Convert to JSON5 format with comments
-	configJSON, err := json.MarshalIndent(config, "", "    ")
-	if err != nil {
-		sap.notify("Failed to marshal config: "+err.Error(), 3*time.Second, "error")
-		return
-	}
-
-	// Add comments to the JSON
+	// Format configuration with comments
 	configWithComments := fmt.Sprintf(`{
     // Name of the stream (required)
     name: %q,
