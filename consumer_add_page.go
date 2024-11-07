@@ -8,7 +8,7 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/rivo/tview"
 	"github.com/solidpulse/natsdash/ds"
-	json5 "muzzammil.xyz/jsonc"
+	"gopkg.in/yaml.v2"
 )
 
 type ConsumerAddPage struct {
@@ -72,8 +72,8 @@ func (cap *ConsumerAddPage) redraw(ctx *ds.Context) {
 			return
 		}
 
-		// Convert to JSON
-		jsonBytes, err := json.MarshalIndent(consumer.Config, "", "    ")
+		// Convert to YAML
+		yamlBytes, err := yaml.Marshal(consumer.Config)
 		if err != nil {
 			cap.notify("Failed to convert config to JSON: "+err.Error(), 3*time.Second, "error")
 			return
@@ -82,73 +82,59 @@ func (cap *ConsumerAddPage) redraw(ctx *ds.Context) {
 		cap.txtArea.SetText(string(jsonBytes), true)
 	} else {
 		// Set default template for new consumer
-		defaultConfig := `{
-    /*
-     * Name of the consumer (required)
-     * Will be set automatically from previous screen
-     */
-    name: "",
+		defaultConfig := `# Name of the consumer (required)
+# Will be set automatically from previous screen
+name: ""
 
-    /* Durable name for the consumer (optional)
-     * Makes this a durable consumer that survives restarts
-     */
-    durable_name: "NEW",
+# Durable name for the consumer (optional)
+# Makes this a durable consumer that survives restarts
+durable_name: "NEW"
 
-    /* Pull mode configuration (optional)
-     * true: pull-based / false: push-based
-     */
-    pull: true,
+# Pull mode configuration (optional)
+# true: pull-based / false: push-based
+pull: true
 
-    // Subject filter for the consumer (required)
-    // Examples: "ORDERS.*", "ORDERS.>", "ORDERS.*.received"
-    filter_subject: "ORDERS.received",
+# Subject filter for the consumer (required)
+# Examples: "ORDERS.*", "ORDERS.>", "ORDERS.*.received"
+filter_subject: "ORDERS.received"
 
-    /* Delivery policy configuration (optional)
-     * Only one of these should be true
-     */
-    deliver_all: true,        /* Deliver all available messages */
-    deliver_last: false,      /* Deliver only the last message */
-    /* Other options (set all false if using deliver_all):
-     * deliver_new: false   - Only new messages
-     * deliver_by_start_sequence: false  - Start from specific sequence
-     * deliver_by_start_time: false      - Start from specific time
-     */
+# Delivery policy configuration (optional)
+# Only one of these should be true
+deliver_all: true        # Deliver all available messages
+deliver_last: false      # Deliver only the last message
+# Other options (set all false if using deliver_all):
+# deliver_new: false   # Only new messages
+# deliver_by_start_sequence: false  # Start from specific sequence
+# deliver_by_start_time: false      # Start from specific time
 
-    /* Acknowledgment policy (required)
-     * Options: "none", "all", "explicit"
-     */
-    ack_policy: "explicit",
+# Acknowledgment policy (required)
+# Options: "none", "all", "explicit"
+ack_policy: "explicit"
 
-    /* Acknowledgment wait time (optional)
-     * How long to wait for ack before redelivery
-     * Format: "30s", "1m", "1h"
-     */
-    ack_wait: "30s",
+# Acknowledgment wait time (optional)
+# How long to wait for ack before redelivery
+# Format: "30s", "1m", "1h"
+ack_wait: "30s"
 
-    /* Replay policy (required)
-     * Options: "instant", "original"
-     */
-    replay_policy: "instant",
+# Replay policy (required)
+# Options: "instant", "original"
+replay_policy: "instant"
 
-    /* Maximum delivery attempts (optional)
-     * How many times to attempt delivery before giving up
-     */
-    max_deliver: 20,
+# Maximum delivery attempts (optional)
+# How many times to attempt delivery before giving up
+max_deliver: 20
 
-    /* Sampling rate percentage (optional)
-     * 1-100, where 100 means all messages
-     */
-    sample_freq: 100
+# Sampling rate percentage (optional)
+# 1-100, where 100 means all messages
+sample_freq: 100
 
-    /* Other available options:
-     * max_ack_pending: 1000    - Maximum pending acks
-     * max_waiting: 512         - Maximum waiting pulls
-     * max_batch: 100          - Maximum batch size for pull
-     * idle_heartbeat: "30s"   - Idle heartbeat interval
-     * flow_control: false     - Enable flow control
-     * headers_only: false     - Deliver only headers
-     */
-}`
+# Other available options:
+# max_ack_pending: 1000    # Maximum pending acks
+# max_waiting: 512         # Maximum waiting pulls
+# max_batch: 100          # Maximum batch size for pull
+# idle_heartbeat: "30s"   # Idle heartbeat interval
+# flow_control: false     # Enable flow control
+# headers_only: false     # Deliver only headers`
 		cap.txtArea.SetText(defaultConfig, false)
 	}
 }
@@ -193,8 +179,8 @@ func (cap *ConsumerAddPage) saveConsumer() {
 
 	// Parse the configuration
 	var config nats.ConsumerConfig
-	if err := json5.Unmarshal([]byte(cap.txtArea.GetText()), &config); err != nil {
-		cap.notify("Invalid configuration: "+err.Error(), 3*time.Second, "error")
+	if err := yaml.Unmarshal([]byte(cap.txtArea.GetText()), &config); err != nil {
+		cap.notify("Invalid YAML configuration: "+err.Error(), 3*time.Second, "error")
 		return
 	}
 
