@@ -184,12 +184,10 @@ func (cap *ConsumerAddPage) saveConsumer() {
 		return
 	}
 
-	// Set the name from the previous screen
-	config.Name = cap.consumerName
-
 	// Create or update the consumer
 	var consumer *nats.ConsumerInfo
 	if cap.isEdit {
+		config.Name = cap.consumerName
 		consumer, err = js.UpdateConsumer(cap.streamName, &config)
 	} else {
 		consumer, err = js.AddConsumer(cap.streamName, &config)
