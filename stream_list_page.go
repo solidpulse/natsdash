@@ -138,14 +138,13 @@ func (sp *StreamListPage) setupInputCapture() {
 			infoPage.streamName = streamName
 			infoPage.redraw(&sp.Data.CurrCtx)
 		case 'c', 'C':
-			logger.Info("Consumer List action triggered")
 			if sp.streamList.GetItemCount() == 0 {
 				sp.notify("No stream selected", 3*time.Second, "error")
 				return event
 			}
 			idx := sp.streamList.GetCurrentItem()
 			streamName, _ := sp.streamList.GetItemText(idx)
-			logger.Info("Stream info action triggered for: %s", streamName)
+			logger.Info("consumer list action triggered for: %s", streamName)
 			pages.SwitchToPage("consumerListPage")
 			_, b := pages.GetFrontPage()
 			infoPage := b.(*ConsumerListPage)

@@ -89,6 +89,7 @@ func (cp *ConsumerListPage) setupInputCapture() {
 				pages.SwitchToPage("consumerAddPage")
 				_, b := pages.GetFrontPage()
 				addPage := b.(*ConsumerAddPage)
+				addPage.streamName = cp.streamName
 				addPage.redraw(&cp.Data.CurrCtx)
 			case 'e', 'E':
 				if cp.consumerList.GetItemCount() == 0 {
@@ -152,10 +153,6 @@ func (cp *ConsumerListPage) redraw(ctx *ds.Context) {
 	}
 
 	consumersChan := js.Consumers(cp.streamName)
-	if err != nil {
-		cp.notify("Failed to get consumers: "+err.Error(), 3*time.Second, "error")
-		return
-	}
 
 	for consumer := range consumersChan {
 		cp.consumerList.AddItem(consumer.Name, "", 0, nil)

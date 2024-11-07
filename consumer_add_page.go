@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
@@ -79,7 +78,7 @@ func (cap *ConsumerAddPage) redraw(ctx *ds.Context) {
 			return
 		}
 
-		cap.txtArea.SetText(string(jsonBytes), true)
+		cap.txtArea.SetText(string(yamlBytes), true)
 	} else {
 		// Set default template for new consumer
 		defaultConfig := `# Name of the consumer (required)
@@ -140,9 +139,10 @@ sample_freq: 100
 }
 	
 func (cp *ConsumerAddPage) goBack() {
-	pages.SwitchToPage("streamListPage")
+	pages.SwitchToPage("consumerListPage")
 	_, b := pages.GetFrontPage()
-	b.(*StreamListPage).redraw(&cp.Data.CurrCtx)
+	b.(*ConsumerListPage).streamName = cp.streamName
+	b.(*ConsumerListPage).redraw(&cp.Data.CurrCtx)
 	cp.app.SetFocus(b) // Add this line
 }
 
@@ -203,8 +203,5 @@ func (cap *ConsumerAddPage) saveConsumer() {
 	cap.notify("Consumer "+consumer.Name+" saved successfully", 3*time.Second, "info")
 	
 	// Switch back to consumer list
-	pages.SwitchToPage("consumerListPage")
-	_, p := pages.GetFrontPage()
-	listPage := p.(*ConsumerListPage)
-	listPage.redraw(&cap.Data.CurrCtx)
+	cap.goBack()
 }

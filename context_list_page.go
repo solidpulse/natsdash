@@ -259,7 +259,7 @@ func (cp *ContextPage) notify(message string, duration time.Duration, logLevel s
 
 func (cp *ContextPage) reloadNatsCliContexts() {
 	configDir, _ := ds.GetConfigDir()
-	data.LoadFromDir(configDir)
+	data.LoadFromDir(path.Join(configDir, "context"))
 }
 
 func (cp *ContextPage) Redraw() {
