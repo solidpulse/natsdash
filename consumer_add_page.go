@@ -178,15 +178,18 @@ func (cap *ConsumerAddPage) saveConsumer() {
 		return
 	}
 
-	// First convert YAML to generic map
-	var yamlData interface{}
+	// First convert YAML to map
+	var yamlData map[interface{}]interface{}
 	if err := yaml.Unmarshal([]byte(cap.txtArea.GetText()), &yamlData); err != nil {
 		cap.notify("Invalid YAML configuration: "+err.Error(), 3*time.Second, "error")
 		return
 	}
 
+	// Convert YAML map to JSON-compatible map
+	jsonMap := convertToStringMap(yamlData)
+
 	// Convert to JSON
-	jsonBytes, err := json.Marshal(yamlData)
+	jsonBytes, err := json.Marshal(jsonMap)
 	if err != nil {
 		cap.notify("Failed to process configuration: "+err.Error(), 3*time.Second, "error")
 		return
@@ -217,4 +220,36 @@ func (cap *ConsumerAddPage) saveConsumer() {
 	
 	// Switch back to consumer list
 	cap.goBack()
+}
+
+// Helper function to convert YAML map to JSON-compatible map
+func convertToStringMap(m map[interface{}]interface{}) map[string]interface{} {
+	res := make(map[string]interface{})
+	for k, v := range m {
+		switch v2 := v.(type) {
+		case map[interface{}]interface{}:
+			res[k.(string)] = convertToStringMap(v2)
+		case []interface{}:
+			res[k.(string)] = convertToStringSlice(v2)
+		default:
+			res[k.(string)] = v
+		}
+	}
+	return res
+}
+
+// Helper function to convert YAML slice to JSON-compatible slice
+func convertToStringSlice(s []interface{}) []interface{} {
+	res := make([]interface{}, len(s))
+	for i, v := range s {
+		switch v2 := v.(type) {
+		case map[interface{}]interface{}:
+			res[i] = convertToStringMap(v2)
+		case []interface{}:
+			res[i] = convertToStringSlice(v2)
+		default:
+			res[i] = v
+		}
+	}
+	return res
 }
