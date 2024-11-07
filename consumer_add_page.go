@@ -8,6 +8,7 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/rivo/tview"
 	"github.com/solidpulse/natsdash/ds"
+	"github.com/yosuke-furukawa/json5/encoding/json5"
 )
 
 type ConsumerAddPage struct {
@@ -135,7 +136,7 @@ func (cap *ConsumerAddPage) redraw(ctx *ds.Context) {
     // "flow_control": false     // Enable flow control
     // "headers_only": false     // Deliver only headers
 }`
-		cap.txtArea.SetText(defaultConfig, true)
+		cap.txtArea.SetText(defaultConfig, false)
 	}
 }
 	
@@ -179,7 +180,7 @@ func (cap *ConsumerAddPage) saveConsumer() {
 
 	// Parse the configuration
 	var config nats.ConsumerConfig
-	if err := json.Unmarshal([]byte(cap.txtArea.GetText()), &config); err != nil {
+	if err := json5.Unmarshal([]byte(cap.txtArea.GetText()), &config); err != nil {
 		cap.notify("Invalid configuration: "+err.Error(), 3*time.Second, "error")
 		return
 	}
