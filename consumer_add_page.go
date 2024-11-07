@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"strconv"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
@@ -226,6 +227,11 @@ func (cap *ConsumerAddPage) saveConsumer() {
 			return
 		}
 		jsonMap["idle_heartbeat"] = duration.Nanoseconds()
+	}
+
+	// Convert numeric fields to proper types
+	if sampleFreq, ok := jsonMap["sample_freq"].(int); ok {
+		jsonMap["sample_freq"] = strconv.Itoa(sampleFreq)
 	}
 
 	// Convert to JSON
