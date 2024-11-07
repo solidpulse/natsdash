@@ -73,10 +73,30 @@ func (cap *ConsumerAddPage) redraw(ctx *ds.Context) {
 			return
 		}
 
-		// Convert to YAML
-		yamlBytes, err := yaml.Marshal(consumer.Config)
+		// Convert to map first
+		var configMap map[string]interface{}
+		jsonBytes, err := json.Marshal(consumer.Config)
 		if err != nil {
-			cap.notify("Failed to convert config to JSON: "+err.Error(), 3*time.Second, "error")
+			cap.notify("Failed to convert config: "+err.Error(), 3*time.Second, "error")
+			return
+		}
+		if err := json.Unmarshal(jsonBytes, &configMap); err != nil {
+			cap.notify("Failed to process config: "+err.Error(), 3*time.Second, "error")
+			return
+		}
+
+		// Convert duration fields to strings
+		if ackWait, ok := configMap["ack_wait"].(float64); ok {
+			configMap["ack_wait"] = time.Duration(ackWait).String()
+		}
+		if idleHeartbeat, ok := configMap["idle_heartbeat"].(float64); ok {
+			configMap["idle_heartbeat"] = time.Duration(idleHeartbeat).String()
+		}
+
+		// Convert to YAML
+		yamlBytes, err := yaml.Marshal(configMap)
+		if err != nil {
+			cap.notify("Failed to convert config to YAML: "+err.Error(), 3*time.Second, "error")
 			return
 		}
 
@@ -189,6 +209,24 @@ func (cap *ConsumerAddPage) saveConsumer() {
 
 	// Convert YAML map to JSON-compatible map
 	jsonMap := convertToStringMap(yamlData)
+
+	// Handle duration fields before JSON conversion
+	if ackWait, ok := jsonMap["ack_wait"].(string); ok {
+		duration, err := time.ParseDuration(ackWait)
+		if err != nil {
+			cap.notify("Invalid ack_wait duration: "+err.Error(), 3*time.Second, "error")
+			return
+		}
+		jsonMap["ack_wait"] = duration.Nanoseconds()
+	}
+	if idleHeartbeat, ok := jsonMap["idle_heartbeat"].(string); ok {
+		duration, err := time.ParseDuration(idleHeartbeat)
+		if err != nil {
+			cap.notify("Invalid idle_heartbeat duration: "+err.Error(), 3*time.Second, "error")
+			return
+		}
+		jsonMap["idle_heartbeat"] = duration.Nanoseconds()
+	}
 
 	// Convert to JSON
 	jsonBytes, err := json.Marshal(jsonMap)
