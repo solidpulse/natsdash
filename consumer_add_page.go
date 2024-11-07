@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
@@ -177,10 +178,24 @@ func (cap *ConsumerAddPage) saveConsumer() {
 		return
 	}
 
-	// Parse the configuration
-	var config nats.ConsumerConfig
-	if err := yaml.Unmarshal([]byte(cap.txtArea.GetText()), &config); err != nil {
+	// First convert YAML to generic map
+	var yamlData interface{}
+	if err := yaml.Unmarshal([]byte(cap.txtArea.GetText()), &yamlData); err != nil {
 		cap.notify("Invalid YAML configuration: "+err.Error(), 3*time.Second, "error")
+		return
+	}
+
+	// Convert to JSON
+	jsonBytes, err := json.Marshal(yamlData)
+	if err != nil {
+		cap.notify("Failed to process configuration: "+err.Error(), 3*time.Second, "error")
+		return
+	}
+
+	// Parse JSON into consumer config to use NATS struct tags
+	var config nats.ConsumerConfig
+	if err := json.Unmarshal(jsonBytes, &config); err != nil {
+		cap.notify("Invalid configuration: "+err.Error(), 3*time.Second, "error")
 		return
 	}
 
