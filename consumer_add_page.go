@@ -8,7 +8,7 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/rivo/tview"
 	"github.com/solidpulse/natsdash/ds"
-	"github.com/yosuke-furukawa/json5/encoding/json5"
+	json5 "muzzammil.xyz/jsonc"
 )
 
 type ConsumerAddPage struct {
@@ -99,9 +99,8 @@ func (cap *ConsumerAddPage) redraw(ctx *ds.Context) {
      */
     pull: true,
 
-    /* Subject filter for the consumer (required)
-     * Examples: "ORDERS.*", "ORDERS.>", "ORDERS.*.received"
-     */
+    // Subject filter for the consumer (required)
+    // Examples: "ORDERS.*", "ORDERS.>", "ORDERS.*.received"
     filter_subject: "ORDERS.received",
 
     /* Delivery policy configuration (optional)
