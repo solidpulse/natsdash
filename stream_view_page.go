@@ -296,6 +296,7 @@ func (svp *StreamViewPage) displayMessage(msg *nats.Msg) {
 	timestamp := time.Now().Format("15:04:05.00000")
 	text := timestamp + " [" + msg.Subject + "] " + string(msg.Data) + "\n"
 	svp.logView.Write([]byte(text))
+	svp.Data.CurrCtx.LogFile.Write([]byte(text))
 	svp.logView.ScrollToEnd()
 }
 
