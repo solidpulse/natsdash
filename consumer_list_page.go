@@ -101,7 +101,7 @@ func (cp *ConsumerListPage) setupInputCapture() {
 					// Second press - execute delete
 					cp.deleteConfirmTimer.Stop()
 					cp.deleteConfirmConsumer = ""
-					cp.notify("Delete consumer functionality coming soon...", 3*time.Second, "info")
+					cp.deleteConsumer(consumerName)
 				} else {
 					// First press - start confirmation
 					logger.Info("Delete consumer action triggered for: %s", consumerName)
@@ -130,7 +130,7 @@ func (cp *ConsumerListPage) setupInputCapture() {
 
 func (cp *ConsumerListPage) startDeleteConfirmation(consumerName string) {
 	cp.deleteConfirmConsumer = consumerName
-	cp.notify("Press DEL again within 10 seconds to confirm deletion of '"+consumerName+"'", 10*time.Second, "warning")
+	cp.notify("Press 'd' again within 10 seconds to confirm deletion of '"+consumerName+"'", 10*time.Second, "warning")
 	
 	if cp.deleteConfirmTimer != nil {
 		cp.deleteConfirmTimer.Stop()
@@ -173,6 +173,25 @@ func (cp *ConsumerListPage) redraw(ctx *ds.Context) {
 	
 }
 
+
+func (cp *ConsumerListPage) deleteConsumer(consumerName string) {
+	// Get JetStream context
+	js, err := cp.Data.CurrCtx.Conn.JetStream()
+	if err != nil {
+		cp.notify("Failed to get JetStream context: "+err.Error(), 3*time.Second, "error")
+		return
+	}
+
+	// Delete the consumer
+	err = js.DeleteConsumer(cp.streamName, consumerName)
+	if err != nil {
+		cp.notify("Failed to delete consumer: "+err.Error(), 3*time.Second, "error")
+		return
+	}
+
+	cp.notify("Consumer '"+consumerName+"' deleted successfully", 3*time.Second, "info")
+	cp.redraw(&cp.Data.CurrCtx)
+}
 
 func (cp *ConsumerListPage) goBack() {
 	pages.SwitchToPage("streamListPage")
