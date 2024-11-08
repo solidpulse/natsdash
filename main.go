@@ -28,6 +28,7 @@ func main() {
 	ConsumerListPage := NewConsumerListPage(app, data)
 	ConsumerAddPage := NewConsumerAddPage(app, data)
 	ConsumerInfoPage := NewConsumerInfoPage(app, data)
+	StreamViewPage := NewStreamViewPage(app, data)
 
 	pages.AddPage("natsPage", natsPage, true, false)
 	pages.AddPage("streamListPage", streamListPage, true, false)
@@ -36,6 +37,7 @@ func main() {
 	pages.AddPage("consumerInfoPage", ConsumerInfoPage, true, false)
 	pages.AddPage("streamAddPage", StreamAddPage, true, false)
 	pages.AddPage("streamInfoPage", StreamInfoPage, true, false)
+	pages.AddPage("streamViewPage", StreamViewPage, true, false)
 	pages.AddPage("consumerInfoPage", NewConsumerInfoPage(app, data), true, false)
 	pages.AddPage("contextFormPage", contextFormPage, true, false)
 	pages.AddPage("serverInfoPage", ServerInfoPage, true, false)

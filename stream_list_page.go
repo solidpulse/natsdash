@@ -278,9 +278,9 @@ func createStreamListHeaderRow() *tview.Flex {
 }
 func (sp *StreamListPage) viewStream() {
 	streamName, _ := sp.streamList.GetItemText(sp.streamList.GetCurrentItem())
-	viewPage := pages.GetPage("streamViewPage").(*StreamViewPage)
-	viewPage.streamName = streamName
 	pages.SwitchToPage("streamViewPage")
-	viewPage.redraw(&sp.Data.CurrCtx)
+	_, viewPage := pages.GetFrontPage()
+	viewPage.(*StreamViewPage).streamName = streamName
+	viewPage.(*StreamViewPage).redraw(&sp.Data.CurrCtx)
 	sp.app.SetFocus(viewPage)
 }
