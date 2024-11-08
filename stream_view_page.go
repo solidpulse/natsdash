@@ -187,16 +187,23 @@ func (svp *StreamViewPage) fetchPreviousMessage() {
 		return
 	}
 
-	// Get consumer info to find current sequence
-	consumerInfo, err := js.ConsumerInfo(svp.streamName, svp.consumerName)
+	// Get the metadata from the last message
+	meta, err := svp.consumer.ConsumerInfo()
 	if err != nil {
 		svp.log("ERROR: Failed to get consumer info: " + err.Error())
 		return
 	}
 
-	// Calculate the previous sequence number
-	prevSeq := consumerInfo.Delivered.Consumer
-	if prevSeq <= 1 {
+	// Get stream info
+	streamInfo, err := js.StreamInfo(svp.streamName)
+	if err != nil {
+		svp.log("ERROR: Failed to get stream info: " + err.Error())
+		return
+	}
+
+	// Calculate the previous sequence number based on stream sequence
+	currentSeq := meta.Delivered.Stream
+	if currentSeq <= streamInfo.State.FirstSeq {
 		svp.log("INFO: Already at the beginning of the stream")
 		return
 	}
@@ -209,7 +216,7 @@ func (svp *StreamViewPage) fetchPreviousMessage() {
 		svp.consumer.Unsubscribe()
 	}
 
-	// Create new subscription with configuration to start from previous message
+	// Create new subscription starting from previous sequence
 	filterSubject := svp.filterSubject.GetText()
 	if filterSubject == "" {
 		filterSubject = ">"
@@ -218,7 +225,7 @@ func (svp *StreamViewPage) fetchPreviousMessage() {
 	sub, err := js.PullSubscribe(filterSubject, svp.consumerName,
 		nats.BindStream(svp.streamName),
 		nats.AckExplicit(),
-		nats.StartSequence(prevSeq-1))
+		nats.StartSequence(currentSeq-1))
 	if err != nil {
 		svp.log("ERROR: Failed to create subscription: " + err.Error())
 		return
