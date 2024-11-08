@@ -1,14 +1,12 @@
 package main
 
 import (
-	"io"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/nats-io/nats.go"
 	"github.com/rivo/tview"
 	"github.com/solidpulse/natsdash/ds"
-	"github.com/solidpulse/natsdash/logger"
 )
 
 type StreamViewPage struct {
