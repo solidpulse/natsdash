@@ -46,12 +46,13 @@ func NewConsumerListPage(app *tview.Application, data *ds.Data) *ConsumerListPag
 
 	// Create footer
 	cp.footerTxt = createTextView("", tcell.ColorWhite)
+	cp.footerTxt.SetBorder(true)
 
 	// Add all components
 	cp.
 		AddItem(headerRow2, 3, 0, false).
 		AddItem(cp.consumerList, 0, 1, true).
-		AddItem(cp.footerTxt, 1, 0, false)
+		AddItem(cp.footerTxt, 3, 0, false)
 
 	cp.setupInputCapture()
 

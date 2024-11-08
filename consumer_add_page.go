@@ -33,7 +33,9 @@ func NewConsumerAddPage(app *tview.Application, data *ds.Data) *ConsumerAddPage 
 
 	// Create header
 	headerRow := tview.NewFlex().SetDirection(tview.FlexColumn)
-	headerRow.AddItem(createTextView("[ESC] Back [Alt+Enter] Save", tcell.ColorWhite), 0, 1, false)
+	headerTxtView := createTextView("[ESC] Back    [Alt+Enter] Save", tcell.ColorWhite)
+	headerTxtView.SetBorderPadding(1,1,1,1)
+	headerRow.AddItem(headerTxtView, 0, 1, false)
 
 	// Create text area
 	cap.txtArea = tview.NewTextArea()
@@ -41,11 +43,12 @@ func NewConsumerAddPage(app *tview.Application, data *ds.Data) *ConsumerAddPage 
 	
 	// Create footer
 	cap.footerTxt = createTextView("", tcell.ColorWhite)
+	cap.footerTxt.SetBorder(true)
 
 	// Add all components
-	cap.AddItem(headerRow, 1, 0, false).
+	cap.AddItem(headerRow, 3, 0, false).
 		AddItem(cap.txtArea, 0, 1, true).
-		AddItem(cap.footerTxt, 1, 0, false)
+		AddItem(cap.footerTxt, 3, 0, false)
 
 	cap.setupInputCapture()
 
