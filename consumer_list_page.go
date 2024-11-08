@@ -29,7 +29,7 @@ func NewConsumerListPage(app *tview.Application, data *ds.Data) *ConsumerListPag
 
 	// Create header
 	headerRow2 := tview.NewFlex().SetDirection(tview.FlexRow)
-	txtViewHeader := createTextView("[ESC] Back [a] Add [e] Edit [i] Info [DEL] Delete", tcell.ColorWhite)
+	txtViewHeader := createTextView("[ESC] Back [a] Add [e] Edit [i] Info [d] Delete", tcell.ColorWhite)
 	txtViewHeader.SetBorderPadding(1,1,1,1)
 	headerRow2.AddItem(txtViewHeader, 0, 1, false)
 
@@ -64,25 +64,6 @@ func (cp *ConsumerListPage) setupInputCapture() {
 		case tcell.KeyEsc:
 			cp.goBack()
 			return nil
-		case tcell.KeyDelete:
-			if cp.consumerList.GetItemCount() == 0 {
-				cp.notify("No consumer selected", 3*time.Second, "error")
-				return event
-			}
-			idx := cp.consumerList.GetCurrentItem()
-			consumerName, _ := cp.consumerList.GetItemText(idx)
-			
-			if cp.deleteConfirmConsumer == consumerName {
-				// Second press - execute delete
-				cp.deleteConfirmTimer.Stop()
-				cp.deleteConfirmConsumer = ""
-				cp.notify("Delete consumer functionality coming soon...", 3*time.Second, "info")
-			} else {
-				// First press - start confirmation
-				logger.Info("Delete consumer action triggered for: %s", consumerName)
-				cp.startDeleteConfirmation(consumerName)
-			}
-			return nil
 		default:
 			switch event.Rune() {
 			case 'a', 'A':
@@ -108,6 +89,25 @@ func (cp *ConsumerListPage) setupInputCapture() {
 				editPage.isEdit = true
 				editPage.consumerName = consumerName
 				editPage.redraw(&cp.Data.CurrCtx)
+			case 'd', 'D':
+				if cp.consumerList.GetItemCount() == 0 {
+					cp.notify("No consumer selected", 3*time.Second, "error")
+					return event
+				}
+				idx := cp.consumerList.GetCurrentItem()
+				consumerName, _ := cp.consumerList.GetItemText(idx)
+				
+				if cp.deleteConfirmConsumer == consumerName {
+					// Second press - execute delete
+					cp.deleteConfirmTimer.Stop()
+					cp.deleteConfirmConsumer = ""
+					cp.notify("Delete consumer functionality coming soon...", 3*time.Second, "info")
+				} else {
+					// First press - start confirmation
+					logger.Info("Delete consumer action triggered for: %s", consumerName)
+					cp.startDeleteConfirmation(consumerName)
+				}
+				return nil
 			case 'i', 'I':
 				if cp.consumerList.GetItemCount() == 0 {
 					cp.notify("No consumer selected", 3*time.Second, "error")
