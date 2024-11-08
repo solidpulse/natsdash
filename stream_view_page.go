@@ -160,10 +160,39 @@ func (svp *StreamViewPage) fetchNextMessage() {
 		return
 	}
 
+	// Get stream info to check current state
+	js, err := svp.Data.CurrCtx.Conn.JetStream()
+	if err != nil {
+		svp.log("ERROR: Failed to get JetStream context: " + err.Error())
+		return
+	}
+
+	// Get consumer info to find current sequence
+	meta, err := svp.consumer.ConsumerInfo()
+	if err != nil {
+		svp.log("ERROR: Failed to get consumer info: " + err.Error())
+		return
+	}
+
+	// Get stream info
+	streamInfo, err := js.StreamInfo(svp.streamName)
+	if err != nil {
+		svp.log("ERROR: Failed to get stream info: " + err.Error())
+		return
+	}
+
+	// Check if we're at the end of the stream
+	if meta.Delivered.Stream >= streamInfo.State.LastSeq {
+		svp.log("INFO: Already at the end of the stream")
+		return
+	}
+
 	msgs, err := svp.consumer.Fetch(1, nats.MaxWait(time.Second))
 	if err != nil {
 		if err != nats.ErrTimeout {
 			svp.log("ERROR: Failed to fetch message: " + err.Error())
+		} else {
+			svp.log("INFO: No more messages available currently")
 		}
 		return
 	}
