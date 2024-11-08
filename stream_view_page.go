@@ -19,7 +19,7 @@ type StreamViewPage struct {
 	subjectName   *tview.InputField
 	txtArea       *tview.TextArea
 	footerTxt     *tview.TextView
-	consumer      *nats.Consumer
+	consumer      *nats.Subscription
 }
 
 func NewStreamViewPage(app *tview.Application, data *ds.Data) *StreamViewPage {
@@ -127,25 +127,27 @@ func (svp *StreamViewPage) createTemporaryConsumer() {
 	// Create a unique name for temporary consumer
 	tempName := "TEMP_VIEW_" + time.Now().Format("20060102150405")
 
-	// Create consumer config
-	cfg := &nats.ConsumerConfig{
-		Durable:       tempName,
-		AckPolicy:     nats.AckExplicitPolicy,
-		FilterSubject: svp.filterSubject.GetText(),
+	// Create ephemeral consumer subscription
+	filterSubject := svp.filterSubject.GetText()
+	if filterSubject == "" {
+		filterSubject = ">" // Subscribe to all subjects if no filter
 	}
 
-	consumer, err := js.AddConsumer(svp.streamName, cfg)
+	// Clean up previous subscription if exists
+	if svp.consumer != nil {
+		svp.consumer.Unsubscribe()
+	}
+
+	// Create new subscription
+	sub, err := js.PullSubscribe(filterSubject, tempName, 
+		nats.BindStream(svp.streamName),
+		nats.AckExplicit())
 	if err != nil {
-		svp.notify("Failed to create consumer: "+err.Error(), 3*time.Second, "error")
+		svp.notify("Failed to create subscription: "+err.Error(), 3*time.Second, "error")
 		return
 	}
 
-	// Clean up previous consumer if exists
-	if svp.consumer != nil {
-		js.DeleteConsumer(svp.streamName, svp.consumer.CachedInfo().Name)
-	}
-
-	svp.consumer = consumer
+	svp.consumer = sub
 }
 
 func (svp *StreamViewPage) updateConsumerFilter() {
@@ -159,7 +161,7 @@ func (svp *StreamViewPage) fetchNextMessage() {
 		return
 	}
 
-	msg, err := svp.consumer.NextMsg(time.Second)
+	msgs, err := svp.consumer.Fetch(1, nats.MaxWait(time.Second))
 	if err != nil {
 		if err != nats.ErrTimeout {
 			svp.notify("Failed to fetch message: "+err.Error(), 3*time.Second, "error")
@@ -167,8 +169,10 @@ func (svp *StreamViewPage) fetchNextMessage() {
 		return
 	}
 
-	svp.displayMessage(msg)
-	msg.Ack()
+	if len(msgs) > 0 {
+		svp.displayMessage(msgs[0])
+		msgs[0].Ack()
+	}
 }
 
 func (svp *StreamViewPage) fetchPreviousMessage() {
@@ -216,8 +220,7 @@ func (svp *StreamViewPage) notify(message string, duration time.Duration, logLev
 
 func (svp *StreamViewPage) goBack() {
 	if svp.consumer != nil {
-		js, _ := svp.Data.CurrCtx.Conn.JetStream()
-		js.DeleteConsumer(svp.streamName, svp.consumer.CachedInfo().Name)
+		svp.consumer.Unsubscribe()
 	}
 	pages.SwitchToPage("streamListPage")
 	_, b := pages.GetFrontPage()
