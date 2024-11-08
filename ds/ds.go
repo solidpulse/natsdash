@@ -69,7 +69,7 @@ func (configData *Data) RemoveContextFileByName(name string) error {
 		logger.Error("Failed to get config directory: %v", err) // Add this line
 		return err
 	}
-	filePath := filepath.Join(configDir, name+".json")
+	filePath := filepath.Join(configDir,"context", name+".json")
 	err = os.Remove(filePath)
 	if err != nil {
 		logger.Error("Failed to remove file %s: %v", filePath, err) // Add this line
@@ -90,7 +90,7 @@ func (configData *Data) SaveToFile() error {
 
 	// Save each context to a separate file
 	for _, context := range configData.Contexts {
-		filePath := filepath.Join(configDir, context.Name+".json")
+		filePath := filepath.Join(configDir,"context", context.Name+".json")
 		file, err := os.Create(filePath)
 		if err != nil {
 			logger.Error("Failed to create file %s: %v", filePath, err) // Add this line

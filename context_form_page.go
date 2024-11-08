@@ -134,7 +134,7 @@ func (cfp *ContextFormPage) saveContext() {
 	inboxPrefix := cfp.form.GetFormItemByLabel("Inbox Prefix").(*tview.InputField).GetText()
 
 	cfp.notify("Connecting to server...", 30*time.Second, "info")
-	if cfp.Data.CurrCtx.Name != name {
+	if cfp.Data.CurrCtx.Name != name && cfp.Data.CurrCtx.Name != "" {
 		//delete the old context file
 		err := cfp.Data.RemoveContextFileByName(cfp.Data.CurrCtx.Name)
 		if err != nil {
