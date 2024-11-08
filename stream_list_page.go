@@ -232,31 +232,39 @@ func (sp *StreamListPage) executeDelete(streamName string) {
 }
 
 func createStreamListHeaderRow() *tview.Flex {
-	headerRow := tview.NewFlex()
-	headerRow.SetBorder(false)
-	headerRow.
-		SetDirection(tview.FlexColumn).
-		SetBorderPadding(0, 0, 1, 1)
+    container := tview.NewFlex()
+    container.SetBorder(false)
+    container.
+        SetDirection(tview.FlexColumn).
+        SetBorderPadding(0, 0, 1, 1)
 
-	headerRow1 := tview.NewFlex()
-	headerRow1.SetDirection(tview.FlexRow)
-	headerRow1.SetBorder(false)
+    col1 := tview.NewFlex()
+    col1.SetDirection(tview.FlexRow)
+    col1.SetBorder(false)
 
-	headerRow1.AddItem(createTextView("[ESC] Back", tcell.ColorWhite), 0, 1, false)
-	headerRow1.AddItem(createTextView("[a] Add", tcell.ColorWhite), 0, 1, false)
-	headerRow1.AddItem(createTextView("[e] Edit", tcell.ColorWhite), 0, 1, false)
+    col1.AddItem(createTextView("[ESC] Back", tcell.ColorWhite), 0, 1, false)
+    col1.AddItem(createTextView(" ", tcell.ColorWhite), 0, 1, false)
+    col1.AddItem(createTextView(" ", tcell.ColorWhite), 0, 1, false)
 
-	headerRow2 := tview.NewFlex()
-	headerRow2.SetDirection(tview.FlexRow)
-	headerRow2.SetBorder(false)
+    col2 := tview.NewFlex()
+    col2.SetDirection(tview.FlexRow)
+    col2.SetBorder(false)
 
-	headerRow2.AddItem(createTextView("[i] Info", tcell.ColorWhite), 0, 1, false)
-	headerRow2.AddItem(createTextView("[c] Consumers", tcell.ColorWhite), 0, 1, false)
-	headerRow2.AddItem(createTextView("[d] Delete", tcell.ColorWhite), 0, 1, false)
+    col2.AddItem(createTextView("[i] Info", tcell.ColorWhite), 0, 1, false)
+    col2.AddItem(createTextView("[c] Consumers", tcell.ColorWhite), 0, 1, false)
+    col2.AddItem(createTextView("[v] View", tcell.ColorWhite), 0, 1, false)
 
-	headerRow.AddItem(headerRow1, 0, 1, false)
-	headerRow.AddItem(headerRow2, 0, 1, false)
-	headerRow.SetTitle("STREAMS")
+	col3 := tview.NewFlex()
+	col3.SetDirection(tview.FlexRow)
+	col3.SetBorder(false)
+	col3.AddItem(createTextView("[a] Add", tcell.ColorWhite), 0, 1, false)
+	col3.AddItem(createTextView("[e] Edit", tcell.ColorWhite), 0, 1, false)	
+	col3.AddItem(createTextView("[d] Delete", tcell.ColorWhite), 0, 1, false)
 
-	return headerRow
+    container.AddItem(col1, 0, 1, false)
+    container.AddItem(col2, 0, 1, false)
+	container.AddItem(col3, 0, 1, false)
+    container.SetTitle("STREAMS")
+
+    return container
 }
