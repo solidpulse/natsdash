@@ -28,9 +28,10 @@ func NewConsumerListPage(app *tview.Application, data *ds.Data) *ConsumerListPag
 	}
 
 	// Create header
-	headerRow1 := tview.NewFlex().SetDirection(tview.FlexColumn)
-	headerRow2 := tview.NewFlex().SetDirection(tview.FlexColumn)
-	headerRow2.AddItem(createTextView("[ESC] Back [a] Add [e] Edit [i] Info [DEL] Delete [ESC] Back", tcell.ColorWhite), 0, 1, false)
+	headerRow2 := tview.NewFlex().SetDirection(tview.FlexRow)
+	txtViewHeader := createTextView("[ESC] Back [a] Add [e] Edit [i] Info [DEL] Delete", tcell.ColorWhite)
+	txtViewHeader.SetBorderPadding(1,1,1,1)
+	headerRow2.AddItem(txtViewHeader, 0, 1, false)
 
 	// Create consumer list
 	cp.consumerList = tview.NewList().
@@ -40,15 +41,15 @@ func NewConsumerListPage(app *tview.Application, data *ds.Data) *ConsumerListPag
 		SetSelectedTextColor(tcell.ColorBlack).
 		SetSelectedBackgroundColor(tcell.ColorWhite)
 	cp.consumerList.SetBorder(true)
-	cp.consumerList.SetBorderPadding(2, 0, 1, 1)
+	cp.consumerList.SetBorderPadding(0, 0, 1, 1)
 	cp.consumerList.SetTitle("Consumers")
 
 	// Create footer
 	cp.footerTxt = createTextView("", tcell.ColorWhite)
 
 	// Add all components
-	cp.AddItem(headerRow1, 1, 0, false).
-		AddItem(headerRow2, 1, 0, false).
+	cp.
+		AddItem(headerRow2, 3, 0, false).
 		AddItem(cp.consumerList, 0, 1, true).
 		AddItem(cp.footerTxt, 1, 0, false)
 
@@ -90,6 +91,7 @@ func (cp *ConsumerListPage) setupInputCapture() {
 				_, b := pages.GetFrontPage()
 				addPage := b.(*ConsumerAddPage)
 				addPage.streamName = cp.streamName
+				addPage.isEdit = false	
 				addPage.redraw(&cp.Data.CurrCtx)
 			case 'e', 'E':
 				if cp.consumerList.GetItemCount() == 0 {
@@ -98,8 +100,14 @@ func (cp *ConsumerListPage) setupInputCapture() {
 				}
 				idx := cp.consumerList.GetCurrentItem()
 				consumerName, _ := cp.consumerList.GetItemText(idx)
-				logger.Info("Edit consumer action triggered for: %s", consumerName)
-				cp.notify("Edit consumer functionality coming soon...", 3*time.Second, "info")
+				logger.Info("Add consumer action triggered")
+				pages.SwitchToPage("consumerAddPage")
+				_, b := pages.GetFrontPage()
+				editPage := b.(*ConsumerAddPage)
+				editPage.streamName = cp.streamName
+				editPage.isEdit = true
+				editPage.consumerName = consumerName
+				editPage.redraw(&cp.Data.CurrCtx)
 			case 'i', 'I':
 				if cp.consumerList.GetItemCount() == 0 {
 					cp.notify("No consumer selected", 3*time.Second, "error")
