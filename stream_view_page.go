@@ -169,6 +169,7 @@ func (svp *StreamViewPage) fetchNextMessage() {
 	}
 
 	if len(msgs) > 0 {
+		svp.log("→ Fetching next message")
 		svp.displayMessage(msgs[0])
 		msgs[0].Ack()
 	}
@@ -235,6 +236,7 @@ func (svp *StreamViewPage) fetchPreviousMessage() {
 	}
 
 	if len(msgs) > 0 {
+		svp.log("← Fetching previous message")
 		svp.displayMessage(msgs[0])
 		msgs[0].Ack()
 	}
