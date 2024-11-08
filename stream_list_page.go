@@ -281,6 +281,6 @@ func (sp *StreamListPage) viewStream() {
 	pages.SwitchToPage("streamViewPage")
 	_, viewPage := pages.GetFrontPage()
 	viewPage.(*StreamViewPage).streamName = streamName
-	viewPage.(*StreamViewPage).redraw(&sp.Data.CurrCtx)
 	sp.app.SetFocus(viewPage)
+	viewPage.(*StreamViewPage).redraw(&sp.Data.CurrCtx)
 }
