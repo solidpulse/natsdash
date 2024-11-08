@@ -20,7 +20,6 @@ type StreamViewPage struct {
 	logView       *tview.TextView
 	subjectName   *tview.InputField
 	txtArea       *tview.TextArea
-	footerTxt     *tview.TextView
 	consumer      *nats.Subscription
 }
 
@@ -88,11 +87,6 @@ func (svp *StreamViewPage) setupUI() {
 	})
 	svp.AddItem(svp.txtArea, 0, 8, false)
 
-	// Footer for notifications
-	svp.footerTxt = tview.NewTextView()
-	svp.footerTxt.SetBorder(true)
-	svp.AddItem(svp.footerTxt, 3, 2, false)
-
 	svp.SetBorderPadding(0, 0, 1, 1)
 }
 
@@ -122,7 +116,7 @@ func (svp *StreamViewPage) redraw(ctx *ds.Context) {
 func (svp *StreamViewPage) createTemporaryConsumer() {
 	js, err := svp.Data.CurrCtx.Conn.JetStream()
 	if err != nil {
-		svp.notify("Failed to get JetStream context: "+err.Error(), 3*time.Second, "error")
+		svp.log("ERROR: Failed to get JetStream context: " + err.Error())
 		return
 	}
 
@@ -145,7 +139,7 @@ func (svp *StreamViewPage) createTemporaryConsumer() {
 		nats.BindStream(svp.streamName),
 		nats.AckExplicit())
 	if err != nil {
-		svp.notify("Failed to create subscription: "+err.Error(), 3*time.Second, "error")
+		svp.log("ERROR: Failed to create subscription: " + err.Error())
 		return
 	}
 
@@ -166,7 +160,7 @@ func (svp *StreamViewPage) fetchNextMessage() {
 	msgs, err := svp.consumer.Fetch(1, nats.MaxWait(time.Second))
 	if err != nil {
 		if err != nats.ErrTimeout {
-			svp.notify("Failed to fetch message: "+err.Error(), 3*time.Second, "error")
+			svp.log("ERROR: Failed to fetch message: " + err.Error())
 		}
 		return
 	}
@@ -179,7 +173,7 @@ func (svp *StreamViewPage) fetchNextMessage() {
 
 func (svp *StreamViewPage) fetchPreviousMessage() {
 	// Implementation depends on NATS server version and capabilities
-	svp.notify("Previous message functionality not implemented", 3*time.Second, "warning")
+	svp.log("WARN: Previous message functionality not implemented")
 }
 
 func (svp *StreamViewPage) publishMessage() {
@@ -191,20 +185,20 @@ func (svp *StreamViewPage) publishMessage() {
 
 	subject := svp.subjectName.GetText()
 	if subject == "" {
-		svp.notify("Subject cannot be empty", 3*time.Second, "error")
+		svp.log("ERROR: Subject cannot be empty")
 		return
 	}
 
 	message := svp.txtArea.GetText()
 	if message == "" {
-		svp.notify("Message cannot be empty", 3*time.Second, "error")
+		svp.log("ERROR: Message cannot be empty")
 		return
 	}
 
 	// Get stream info to check subjects
 	stream, err := js.StreamInfo(svp.streamName)
 	if err != nil {
-		svp.notify("Failed to get stream info: "+err.Error(), 3*time.Second, "error")
+		svp.log("ERROR: Failed to get stream info: " + err.Error())
 		return
 	}
 
@@ -218,17 +212,17 @@ func (svp *StreamViewPage) publishMessage() {
 	}
 
 	if !subjectAllowed {
-		svp.notify("Subject does not match stream's subject filter", 3*time.Second, "error")
+		svp.log("ERROR: Subject does not match stream's subject filter")
 		return
 	}
 
 	_, err = js.Publish(subject, []byte(message))
 	if err != nil {
-		svp.notify("Failed to publish message: "+err.Error(), 3*time.Second, "error")
+		svp.log("ERROR: Failed to publish message: " + err.Error())
 		return
 	}
 
-	svp.notify("Message published successfully", 3*time.Second, "info")
+	svp.log("INFO: Message published successfully")
 	svp.txtArea.SetText("", true)
 }
 
@@ -239,16 +233,16 @@ func (svp *StreamViewPage) displayMessage(msg *nats.Msg) {
 	svp.logView.ScrollToEnd()
 }
 
-func (svp *StreamViewPage) notify(message string, duration time.Duration, logLevel string) {
-	svp.footerTxt.SetText(message)
-	svp.footerTxt.SetTextColor(getLogLevelColor(logLevel))
-	logger.Info(message)
-
-	go func() {
-		time.Sleep(duration)
-		svp.footerTxt.SetText("")
-		svp.footerTxt.SetTextColor(tcell.ColorWhite)
-	}()
+func (svp *StreamViewPage) log(message string) {
+	hourMinSec := time.Now().Format("15:04:05.00000")
+	logMessage := hourMinSec + " " + message + "\n"
+	
+	// Write to log view
+	svp.logView.Write([]byte(logMessage))
+	svp.logView.ScrollToEnd()
+	
+	// Write to log file
+	svp.Data.CurrCtx.LogFile.WriteString(logMessage)
 }
 
 func (svp *StreamViewPage) goBack() {
