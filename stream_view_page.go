@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strings"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
@@ -189,7 +190,37 @@ func (svp *StreamViewPage) publishMessage() {
 	}
 
 	subject := svp.subjectName.GetText()
+	if subject == "" {
+		svp.notify("Subject cannot be empty", 3*time.Second, "error")
+		return
+	}
+
 	message := svp.txtArea.GetText()
+	if message == "" {
+		svp.notify("Message cannot be empty", 3*time.Second, "error")
+		return
+	}
+
+	// Get stream info to check subjects
+	stream, err := js.StreamInfo(svp.streamName)
+	if err != nil {
+		svp.notify("Failed to get stream info: "+err.Error(), 3*time.Second, "error")
+		return
+	}
+
+	// Verify subject matches stream's subject filter
+	subjectAllowed := false
+	for _, s := range stream.Config.Subjects {
+		if nats.IsValidSubject(subject) && subjectMatches(s, subject) {
+			subjectAllowed = true
+			break
+		}
+	}
+
+	if !subjectAllowed {
+		svp.notify("Subject does not match stream's subject filter", 3*time.Second, "error")
+		return
+	}
 
 	_, err = js.Publish(subject, []byte(message))
 	if err != nil {
@@ -247,4 +278,33 @@ func createStreamViewHeaderRow() *tview.Flex {
 	headerRow.SetTitle("Stream View")
 
 	return headerRow
+}
+// subjectMatches checks if a subject matches a pattern
+func subjectMatches(pattern, subject string) bool {
+	// Convert NATS wildcards to regex patterns
+	if pattern == ">" {
+		return true
+	}
+	
+	// Split into tokens
+	patternTokens := strings.Split(pattern, ".")
+	subjectTokens := strings.Split(subject, ".")
+
+	if len(patternTokens) > len(subjectTokens) {
+		return false
+	}
+
+	for i, pt := range patternTokens {
+		if pt == ">" {
+			return true
+		}
+		if pt == "*" {
+			continue
+		}
+		if i >= len(subjectTokens) || pt != subjectTokens[i] {
+			return false
+		}
+	}
+
+	return len(patternTokens) == len(subjectTokens)
 }
