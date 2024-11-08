@@ -211,7 +211,7 @@ func (svp *StreamViewPage) publishMessage() {
 	// Verify subject matches stream's subject filter
 	subjectAllowed := false
 	for _, s := range stream.Config.Subjects {
-		if nats.IsValidSubject(subject) && subjectMatches(s, subject) {
+		if isValidSubject(subject) && subjectMatches(s, subject) {
 			subjectAllowed = true
 			break
 		}
@@ -280,6 +280,34 @@ func createStreamViewHeaderRow() *tview.Flex {
 	return headerRow
 }
 // subjectMatches checks if a subject matches a pattern
+// isValidSubject checks if a subject string is valid according to NATS rules
+func isValidSubject(subject string) bool {
+	if subject == "" {
+		return false
+	}
+
+	// Split into tokens
+	tokens := strings.Split(subject, ".")
+	
+	for _, token := range tokens {
+		if token == "" {
+			return false // Empty token between dots
+		}
+		
+		// Check for invalid characters
+		for _, ch := range token {
+			if !((ch >= 'a' && ch <= 'z') || 
+				 (ch >= 'A' && ch <= 'Z') || 
+				 (ch >= '0' && ch <= '9') || 
+				 ch == '-' || ch == '_' || 
+				 ch == '>' || ch == '*') {
+				return false
+			}
+		}
+	}
+	return true
+}
+
 func subjectMatches(pattern, subject string) bool {
 	// Convert NATS wildcards to regex patterns
 	if pattern == ">" {
