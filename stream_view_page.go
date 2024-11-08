@@ -7,6 +7,7 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/rivo/tview"
 	"github.com/solidpulse/natsdash/ds"
+	"github.com/solidpulse/natsdash/logger"
 )
 
 type StreamViewPage struct {
@@ -210,6 +211,7 @@ func (svp *StreamViewPage) displayMessage(msg *nats.Msg) {
 func (svp *StreamViewPage) notify(message string, duration time.Duration, logLevel string) {
 	svp.footerTxt.SetText(message)
 	svp.footerTxt.SetTextColor(getLogLevelColor(logLevel))
+	logger.Info(message)
 
 	go func() {
 		time.Sleep(duration)
