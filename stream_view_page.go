@@ -174,8 +174,75 @@ func (svp *StreamViewPage) fetchNextMessage() {
 }
 
 func (svp *StreamViewPage) fetchPreviousMessage() {
-	// Implementation depends on NATS server version and capabilities
-	svp.log("WARN: Previous message functionality not implemented")
+	if svp.consumer == nil {
+		return
+	}
+
+	// Get stream info to check current state
+	js, err := svp.Data.CurrCtx.Conn.JetStream()
+	if err != nil {
+		svp.log("ERROR: Failed to get JetStream context: " + err.Error())
+		return
+	}
+
+	stream, err := js.StreamInfo(svp.streamName)
+	if err != nil {
+		svp.log("ERROR: Failed to get stream info: " + err.Error())
+		return
+	}
+
+	// Get consumer info to find current sequence
+	consumerInfo, err := js.ConsumerInfo(svp.streamName, svp.consumer.ConsumerInfo().Name)
+	if err != nil {
+		svp.log("ERROR: Failed to get consumer info: " + err.Error())
+		return
+	}
+
+	// Calculate the previous sequence number
+	prevSeq := consumerInfo.Delivered.Consumer
+	if prevSeq <= 1 {
+		svp.log("INFO: Already at the beginning of the stream")
+		return
+	}
+
+	// Create a new temporary consumer starting from the previous message
+	tempName := "TEMP_PREV_" + time.Now().Format("20060102150405")
+	
+	// Clean up previous subscription
+	if svp.consumer != nil {
+		svp.consumer.Unsubscribe()
+	}
+
+	// Create new subscription with configuration to start from previous message
+	filterSubject := svp.filterSubject.GetText()
+	if filterSubject == "" {
+		filterSubject = ">"
+	}
+
+	sub, err := js.PullSubscribe(filterSubject, tempName,
+		nats.BindStream(svp.streamName),
+		nats.AckExplicit(),
+		nats.StartSequence(prevSeq-1))
+	if err != nil {
+		svp.log("ERROR: Failed to create subscription: " + err.Error())
+		return
+	}
+
+	svp.consumer = sub
+
+	// Fetch the message
+	msgs, err := sub.Fetch(1, nats.MaxWait(time.Second))
+	if err != nil {
+		if err != nats.ErrTimeout {
+			svp.log("ERROR: Failed to fetch message: " + err.Error())
+		}
+		return
+	}
+
+	if len(msgs) > 0 {
+		svp.displayMessage(msgs[0])
+		msgs[0].Ack()
+	}
 }
 
 func (svp *StreamViewPage) publishMessage() {
