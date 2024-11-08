@@ -8,7 +8,6 @@ import (
 	"github.com/nats-io/nats.go"
 	"github.com/rivo/tview"
 	"github.com/solidpulse/natsdash/ds"
-	"github.com/solidpulse/natsdash/logger"
 )
 
 type StreamViewPage struct {
@@ -53,6 +52,7 @@ func (svp *StreamViewPage) setupUI() {
 	// Log view for messages
 	svp.logView = tview.NewTextView()
 	svp.logView.SetBorder(true)
+	svp.logView.SetTitle(svp.Data.CurrCtx.LogFilePath)
 	svp.logView.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyTab {
 			svp.app.SetFocus(svp.subjectName)
@@ -109,6 +109,7 @@ func (svp *StreamViewPage) setupInputCapture() {
 
 func (svp *StreamViewPage) redraw(ctx *ds.Context) {
 	svp.logView.Clear()
+	svp.logView.SetTitle(ctx.LogFilePath)
 	svp.createTemporaryConsumer()
 	svp.app.SetFocus(svp.filterSubject)
 }
@@ -148,8 +149,9 @@ func (svp *StreamViewPage) createTemporaryConsumer() {
 
 func (svp *StreamViewPage) updateConsumerFilter() {
 	if svp.consumer != nil {
-		svp.createTemporaryConsumer() // Recreate with new filter
+		svp.consumer.Unsubscribe()
 	}
+	svp.createTemporaryConsumer() // Recreate with new filter
 }
 
 func (svp *StreamViewPage) fetchNextMessage() {
@@ -179,7 +181,7 @@ func (svp *StreamViewPage) fetchPreviousMessage() {
 func (svp *StreamViewPage) publishMessage() {
 	js, err := svp.Data.CurrCtx.Conn.JetStream()
 	if err != nil {
-		svp.notify("Failed to get JetStream context: "+err.Error(), 3*time.Second, "error")
+		svp.log("Failed to get JetStream context: "+err.Error())
 		return
 	}
 
@@ -222,7 +224,7 @@ func (svp *StreamViewPage) publishMessage() {
 		return
 	}
 
-	svp.log("INFO: Message published successfully")
+	svp.log("PUB[" + subject + "] " + message)
 	svp.txtArea.SetText("", true)
 }
 
