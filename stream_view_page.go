@@ -20,6 +20,7 @@ type StreamViewPage struct {
 	subjectName   *tview.InputField
 	txtArea       *tview.TextArea
 	consumer      *nats.Subscription
+	consumerName  string
 }
 
 func NewStreamViewPage(app *tview.Application, data *ds.Data) *StreamViewPage {
@@ -122,7 +123,7 @@ func (svp *StreamViewPage) createTemporaryConsumer() {
 	}
 
 	// Create a unique name for temporary consumer
-	tempName := "TEMP_VIEW_" + time.Now().Format("20060102150405")
+	svp.consumerName = "TEMP_VIEW_" + time.Now().Format("20060102150405")
 
 	// Create ephemeral consumer subscription
 	filterSubject := svp.filterSubject.GetText()
@@ -192,7 +193,7 @@ func (svp *StreamViewPage) fetchPreviousMessage() {
 	}
 
 	// Get consumer info to find current sequence
-	consumerInfo, err := js.ConsumerInfo(svp.streamName, svp.consumer.ConsumerInfo().Name)
+	consumerInfo, err := js.ConsumerInfo(svp.streamName, svp.consumerName)
 	if err != nil {
 		svp.log("ERROR: Failed to get consumer info: " + err.Error())
 		return
@@ -206,7 +207,7 @@ func (svp *StreamViewPage) fetchPreviousMessage() {
 	}
 
 	// Create a new temporary consumer starting from the previous message
-	tempName := "TEMP_PREV_" + time.Now().Format("20060102150405")
+	svp.consumerName = "TEMP_PREV_" + time.Now().Format("20060102150405")
 	
 	// Clean up previous subscription
 	if svp.consumer != nil {
