@@ -101,7 +101,7 @@ func (cap *ConsumerAddPage) redraw(ctx *ds.Context) {
 			return
 		}
 
-		cap.txtArea.SetText(string(yamlBytes), true)
+		cap.txtArea.SetText(string(yamlBytes), false)
 	} else {
 		// Set default template for new consumer
 		defaultConfig := `# Name of the consumer (required)

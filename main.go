@@ -27,11 +27,13 @@ func main() {
 	StreamInfoPage := NewStreamInfoPage(app, data)
 	ConsumerListPage := NewConsumerListPage(app, data)
 	ConsumerAddPage := NewConsumerAddPage(app, data)
+	ConsumerInfoPage := NewConsumerInfoPage(app, data)
 
 	pages.AddPage("natsPage", natsPage, true, false)
 	pages.AddPage("streamListPage", streamListPage, true, false)
 	pages.AddPage("consumerListPage", ConsumerListPage, true, false)
 	pages.AddPage("consumerAddPage", ConsumerAddPage, true, false)
+	pages.AddPage("consumerInfoPage", ConsumerInfoPage, true, false)
 	pages.AddPage("streamAddPage", StreamAddPage, true, false)
 	pages.AddPage("streamInfoPage", StreamInfoPage, true, false)
 	pages.AddPage("consumerInfoPage", NewConsumerInfoPage(app, data), true, false)
