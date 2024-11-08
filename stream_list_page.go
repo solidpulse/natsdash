@@ -102,6 +102,14 @@ func (sp *StreamListPage) setupInputCapture() {
 			return nil
 		case tcell.KeyUp, tcell.KeyDown:
 			sp.app.SetFocus(sp.streamList)
+		case tcell.KeyRune:
+			switch event.Rune() {
+			case 'v', 'V':
+				if sp.streamList.GetItemCount() > 0 {
+					sp.viewStream()
+					return nil
+				}
+			}
 		}
 
 		switch event.Rune() {
@@ -267,4 +275,12 @@ func createStreamListHeaderRow() *tview.Flex {
     container.SetTitle("STREAMS")
 
     return container
+}
+func (sp *StreamListPage) viewStream() {
+	streamName, _ := sp.streamList.GetItemText(sp.streamList.GetCurrentItem())
+	viewPage := pages.GetPage("streamViewPage").(*StreamViewPage)
+	viewPage.streamName = streamName
+	pages.SwitchToPage("streamViewPage")
+	viewPage.redraw(&sp.Data.CurrCtx)
+	sp.app.SetFocus(viewPage)
 }
