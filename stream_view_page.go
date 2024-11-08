@@ -137,7 +137,7 @@ func (svp *StreamViewPage) createTemporaryConsumer() {
 	}
 
 	// Create new subscription
-	sub, err := js.PullSubscribe(filterSubject, tempName, 
+	sub, err := js.PullSubscribe(filterSubject, svp.consumerName, 
 		nats.BindStream(svp.streamName),
 		nats.AckExplicit())
 	if err != nil {
@@ -186,12 +186,6 @@ func (svp *StreamViewPage) fetchPreviousMessage() {
 		return
 	}
 
-	stream, err := js.StreamInfo(svp.streamName)
-	if err != nil {
-		svp.log("ERROR: Failed to get stream info: " + err.Error())
-		return
-	}
-
 	// Get consumer info to find current sequence
 	consumerInfo, err := js.ConsumerInfo(svp.streamName, svp.consumerName)
 	if err != nil {
@@ -220,7 +214,7 @@ func (svp *StreamViewPage) fetchPreviousMessage() {
 		filterSubject = ">"
 	}
 
-	sub, err := js.PullSubscribe(filterSubject, tempName,
+	sub, err := js.PullSubscribe(filterSubject, svp.consumerName,
 		nats.BindStream(svp.streamName),
 		nats.AckExplicit(),
 		nats.StartSequence(prevSeq-1))
