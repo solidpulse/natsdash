@@ -121,8 +121,6 @@ func (svp *StreamViewPage) createTemporaryConsumer() {
 		return
 	}
 
-	// Create a unique name for temporary consumer
-	svp.consumerName = "TEMP_VIEW_" + time.Now().Format("20060102150405")
 
 	// Create ephemeral consumer subscription
 	filterSubject := svp.filterSubject.GetText()
@@ -238,8 +236,6 @@ func (svp *StreamViewPage) fetchPreviousMessage() {
 		return
 	}
 
-	// Create a new temporary consumer starting from the previous message
-	svp.consumerName = "TEMP_PREV_" + time.Now().Format("20060102150405")
 	
 	// Clean up previous subscription
 	if svp.consumer != nil {
