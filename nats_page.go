@@ -138,6 +138,9 @@ func (cfp *NatsPage) goBackToContextPage() {
 		cfp.Data.CurrCtx.CoreNatsSub = nil
 	}
 
+	// Clear the filter text
+	cfp.subjectFilter.SetText("")
+
 	// Stop the tailing goroutine
 	cfp.tailingMutex.Lock()
 	if cfp.tailingDone != nil {
@@ -224,9 +227,12 @@ func (cfp *NatsPage) resetTailFile(logFilePath string) {
 }
 
 func (cfp *NatsPage) subscribeToSubject(subject string) {
+	hourMinSec := time.Now().Format("15:04:05.00000")
+	cfp.Data.CurrCtx.LogFile.WriteString(hourMinSec + " DEBUG: Attempting to subscribe to " + subject + "\n")
 
 	// check if subject is already subscribed
 	if cfp.Data.CurrCtx.CoreNatsSub != nil && cfp.Data.CurrCtx.CoreNatsSub.Subject == subject {
+		cfp.Data.CurrCtx.LogFile.WriteString(hourMinSec + " DEBUG: Already subscribed to " + subject + "\n")
 		return
 	}
 
