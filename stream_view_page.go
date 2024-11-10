@@ -20,7 +20,6 @@ type StreamViewPage struct {
 	subjectName   *tview.InputField
 	txtArea       *tview.TextArea
 	consumer      *nats.Subscription
-	consumerName  string
 }
 
 func NewStreamViewPage(app *tview.Application, data *ds.Data) *StreamViewPage {
@@ -137,7 +136,7 @@ func (svp *StreamViewPage) createTemporaryConsumer() {
 	}
 
 	// Create new subscription
-	sub, err := js.PullSubscribe(filterSubject, svp.consumerName, 
+	sub, err := js.PullSubscribe(filterSubject, "", // Empty name for ephemeral consumer
 		nats.BindStream(svp.streamName),
 		nats.AckExplicit())
 	if err != nil {
@@ -253,7 +252,7 @@ func (svp *StreamViewPage) fetchPreviousMessage() {
 		filterSubject = ">"
 	}
 
-	sub, err := js.PullSubscribe(filterSubject, svp.consumerName,
+	sub, err := js.PullSubscribe(filterSubject, "", // Empty name for ephemeral consumer
 		nats.BindStream(svp.streamName),
 		nats.AckExplicit(),
 		nats.StartSequence(currentSeq-1))
@@ -359,7 +358,7 @@ func (svp *StreamViewPage) publishMessage() {
 					filterSubject = ">"
 				}
 	
-				sub, err := js.PullSubscribe(filterSubject, "TEMP_VIEW_"+time.Now().Format("20060102150405"),
+				sub, err := js.PullSubscribe(filterSubject, "", // Empty name for ephemeral consumer
 					nats.BindStream(svp.streamName),
 					nats.AckExplicit(),
 					nats.DeliverLast())
