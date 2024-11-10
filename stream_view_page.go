@@ -176,32 +176,30 @@ func (svp *StreamViewPage) fetchMessage(direction string) {
 		return
 	}
 
-	meta, err := svp.consumer.ConsumerInfo()
-	if err != nil {
-		svp.log("ERROR: Failed to get consumer info: " + err.Error())
-		return
-	}
-
 	streamInfo, err := svp.getStreamInfo()
 	if err != nil {
 		svp.log("ERROR: Failed to get stream info: " + err.Error())
 		return
 	}
 
-	switch direction {
-	case "next":
-		if meta.Delivered.Stream >= streamInfo.State.LastSeq {
-			svp.log("INFO: Already at the end of the stream")
-			return
-		}
-	case "previous":
-		if meta.Delivered.Stream <= streamInfo.State.FirstSeq {
-			svp.log("INFO: Already at the beginning of the stream")
-			return
-		}
-		if err := svp.createConsumer(nats.StartSequence(meta.Delivered.Stream - 1)); err != nil {
-			svp.log("ERROR: Failed to move to previous message: " + err.Error())
-			return
+	// For the first fetch, we don't need consumer info
+	meta, err := svp.consumer.ConsumerInfo()
+	if err == nil {
+		switch direction {
+		case "next":
+			if meta.Delivered.Stream >= streamInfo.State.LastSeq {
+				svp.log("INFO: Already at the end of the stream")
+				return
+			}
+		case "previous":
+			if meta.Delivered.Stream <= streamInfo.State.FirstSeq {
+				svp.log("INFO: Already at the beginning of the stream")
+				return
+			}
+			if err := svp.createConsumer(nats.StartSequence(meta.Delivered.Stream - 1)); err != nil {
+				svp.log("ERROR: Failed to move to previous message: " + err.Error())
+				return
+			}
 		}
 	}
 
