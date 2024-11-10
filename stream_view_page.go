@@ -288,13 +288,25 @@ func (svp *StreamViewPage) publishMessage() {
 	svp.log("PUB[" + subject + "] " + message)
 	svp.txtArea.SetText("", true)
 
-	// After publishing, recreate the consumer at the latest message
-	if err := svp.createConsumer(nats.DeliverLast()); err != nil {
+	// After publishing, recreate the consumer starting from the previous last sequence
+	streamInfo, err := svp.getStreamInfo()
+	if err != nil {
+		svp.log("ERROR: Failed to get stream info: " + err.Error())
+		return
+	}
+
+	// Create consumer starting from one message before the last
+	startSeq := streamInfo.State.LastSeq
+	if startSeq > 0 {
+		startSeq--
+	}
+	
+	if err := svp.createConsumer(nats.StartSequence(startSeq)); err != nil {
 		svp.log("ERROR: Failed to update consumer: " + err.Error())
 		return
 	}
 
-	// Fetch the newly published message
+	// Fetch messages to show the newly published one
 	svp.fetchNextMessage()
 }
 
