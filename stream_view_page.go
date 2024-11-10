@@ -145,6 +145,8 @@ func (svp *StreamViewPage) createTemporaryConsumer() {
 		return
 	}
 
+	svp.log("INFO: subscribed to: " + sub.Subject)
+
 	svp.consumer = sub
 }
 

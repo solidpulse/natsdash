@@ -228,8 +228,6 @@ func (cfp *NatsPage) resetTailFile(logFilePath string) {
 
 func (cfp *NatsPage) subscribeToSubject(subject string) {
 	hourMinSec := time.Now().Format("15:04:05.00000")
-	cfp.Data.CurrCtx.LogFile.WriteString(hourMinSec + " DEBUG: Attempting to subscribe to " + subject + "\n")
-
 	// check if subject is already subscribed
 	if cfp.Data.CurrCtx.CoreNatsSub != nil && cfp.Data.CurrCtx.CoreNatsSub.Subject == subject {
 		cfp.Data.CurrCtx.LogFile.WriteString(hourMinSec + " DEBUG: Already subscribed to " + subject + "\n")
