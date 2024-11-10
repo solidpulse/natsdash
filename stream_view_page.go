@@ -215,7 +215,12 @@ func (svp *StreamViewPage) fetchMessage(direction string) {
 	}
 
 	if len(msgs) > 0 {
-		arrow := direction == "next" ? "→" : "←"
+		var arrow string
+		if direction == "next" {
+			arrow = "→"
+		} else {
+			arrow = "←"
+		}
 		svp.log(arrow + " Fetching " + direction + " message")
 		svp.displayMessage(msgs[0])
 		msgs[0].Ack()
