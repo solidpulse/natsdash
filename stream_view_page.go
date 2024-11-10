@@ -316,7 +316,6 @@ func (svp *StreamViewPage) publishMessage() {
 
 		if meta.Delivered.Stream < streamInfo.State.LastSeq {
 			svp.log("INFO: Moving to end of stream before publishing...")
-			
 			// Clean up existing consumer
 			svp.consumer.Unsubscribe()
 
@@ -335,15 +334,6 @@ func (svp *StreamViewPage) publishMessage() {
 				return
 			}
 			svp.consumer = sub
-			
-			// Fetch the last message to display it
-			msgs, err := sub.Fetch(1, nats.MaxWait(time.Second))
-			if err != nil && err != nats.ErrTimeout {
-				svp.log("ERROR: Failed to fetch last message: " + err.Error())
-			} else if len(msgs) > 0 {
-				svp.displayMessage(msgs[0])
-				msgs[0].Ack()
-			}
 		}
 	}
 
@@ -376,6 +366,9 @@ func (svp *StreamViewPage) publishMessage() {
 
 	svp.log("PUB[" + subject + "] " + message)
 	svp.txtArea.SetText("", true)
+	
+	// Fetch the newly published message
+	svp.fetchNextMessage()
 }
 
 func (svp *StreamViewPage) displayMessage(msg *nats.Msg) {
