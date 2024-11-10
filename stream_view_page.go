@@ -114,18 +114,10 @@ func (svp *StreamViewPage) redraw(ctx *ds.Context) {
 	svp.app.SetFocus(svp.filterSubject)
 }
 
-func (svp *StreamViewPage) createTemporaryConsumer() {
+func (svp *StreamViewPage) createConsumer(opts ...nats.SubOpt) error {
 	js, err := svp.Data.CurrCtx.Conn.JetStream()
 	if err != nil {
-		svp.log("ERROR: Failed to get JetStream context: " + err.Error())
-		return
-	}
-
-
-	// Create ephemeral consumer subscription
-	filterSubject := svp.filterSubject.GetText()
-	if filterSubject == "" {
-		filterSubject = ">" // Subscribe to all subjects if no filter
+		return err
 	}
 
 	// Clean up previous subscription if exists
@@ -133,18 +125,34 @@ func (svp *StreamViewPage) createTemporaryConsumer() {
 		svp.consumer.Unsubscribe()
 	}
 
-	// Create new subscription
-	sub, err := js.PullSubscribe(filterSubject, "", // Empty name for ephemeral consumer
+	filterSubject := svp.filterSubject.GetText()
+	if filterSubject == "" {
+		filterSubject = ">"
+	}
+
+	// Add common options
+	defaultOpts := []nats.SubOpt{
 		nats.BindStream(svp.streamName),
-		nats.AckExplicit())
+		nats.AckExplicit(),
+	}
+	opts = append(defaultOpts, opts...)
+
+	// Create new subscription
+	sub, err := js.PullSubscribe(filterSubject, "", opts...)
 	if err != nil {
+		return err
+	}
+	
+	svp.consumer = sub
+	return nil
+}
+
+func (svp *StreamViewPage) createTemporaryConsumer() {
+	if err := svp.createConsumer(); err != nil {
 		svp.log("ERROR: Failed to create subscription: " + err.Error())
 		return
 	}
-
-	svp.log("INFO: subscribed to: " + filterSubject)
-
-	svp.consumer = sub
+	svp.log("INFO: subscribed to: " + svp.filterSubject.GetText())
 }
 
 func (svp *StreamViewPage) updateConsumerFilter() {
@@ -154,36 +162,46 @@ func (svp *StreamViewPage) updateConsumerFilter() {
 	svp.createTemporaryConsumer() // Recreate with new filter
 }
 
-func (svp *StreamViewPage) fetchNextMessage() {
+func (svp *StreamViewPage) getStreamInfo() (*nats.StreamInfo, error) {
+	js, err := svp.Data.CurrCtx.Conn.JetStream()
+	if err != nil {
+		return nil, err
+	}
+	return js.StreamInfo(svp.streamName)
+}
+
+func (svp *StreamViewPage) fetchMessage(direction string) {
 	if svp.consumer == nil {
 		return
 	}
 
-	// Get stream info to check current state
-	js, err := svp.Data.CurrCtx.Conn.JetStream()
-	if err != nil {
-		svp.log("ERROR: Failed to get JetStream context: " + err.Error())
-		return
-	}
-
-	// Get consumer info to find current sequence
 	meta, err := svp.consumer.ConsumerInfo()
 	if err != nil {
 		svp.log("ERROR: Failed to get consumer info: " + err.Error())
 		return
 	}
 
-	// Get stream info
-	streamInfo, err := js.StreamInfo(svp.streamName)
+	streamInfo, err := svp.getStreamInfo()
 	if err != nil {
 		svp.log("ERROR: Failed to get stream info: " + err.Error())
 		return
 	}
 
-	// Check if we're at the end of the stream
-	if meta.Delivered.Stream >= streamInfo.State.LastSeq {
-		svp.log("INFO: Already at the end of the stream")
-		return
+	switch direction {
+	case "next":
+		if meta.Delivered.Stream >= streamInfo.State.LastSeq {
+			svp.log("INFO: Already at the end of the stream")
+			return
+		}
+	case "previous":
+		if meta.Delivered.Stream <= streamInfo.State.FirstSeq {
+			svp.log("INFO: Already at the beginning of the stream")
+			return
+		}
+		if err := svp.createConsumer(nats.StartSequence(meta.Delivered.Stream - 1)); err != nil {
+			svp.log("ERROR: Failed to move to previous message: " + err.Error())
+			return
+		}
 	}
 
 	msgs, err := svp.consumer.Fetch(1, nats.MaxWait(time.Second))
@@ -197,127 +215,63 @@ func (svp *StreamViewPage) fetchNextMessage() {
 	}
 
 	if len(msgs) > 0 {
-		svp.log("→ Fetching next message")
+		arrow := direction == "next" ? "→" : "←"
+		svp.log(arrow + " Fetching " + direction + " message")
 		svp.displayMessage(msgs[0])
 		msgs[0].Ack()
 	}
+}
+
+func (svp *StreamViewPage) fetchNextMessage() {
+	svp.fetchMessage("next")
 }
 
 func (svp *StreamViewPage) fetchPreviousMessage() {
-	if svp.consumer == nil {
-		return
-	}
-
-	// Get stream info to check current state
-	js, err := svp.Data.CurrCtx.Conn.JetStream()
-	if err != nil {
-		svp.log("ERROR: Failed to get JetStream context: " + err.Error())
-		return
-	}
-
-	// Get the metadata from the last message
-	meta, err := svp.consumer.ConsumerInfo()
-	if err != nil {
-		svp.log("ERROR: Failed to get consumer info: " + err.Error())
-		return
-	}
-
-	// Get stream info
-	streamInfo, err := js.StreamInfo(svp.streamName)
-	if err != nil {
-		svp.log("ERROR: Failed to get stream info: " + err.Error())
-		return
-	}
-
-	// Calculate the previous sequence number based on stream sequence
-	currentSeq := meta.Delivered.Stream
-	if currentSeq <= streamInfo.State.FirstSeq {
-		svp.log("INFO: Already at the beginning of the stream")
-		return
-	}
-
-	
-	// Clean up previous subscription
-	if svp.consumer != nil {
-		svp.consumer.Unsubscribe()
-	}
-
-	// Create new subscription starting from previous sequence
-	filterSubject := svp.filterSubject.GetText()
-	if filterSubject == "" {
-		filterSubject = ">"
-	}
-
-	sub, err := js.PullSubscribe(filterSubject, "", // Empty name for ephemeral consumer
-		nats.BindStream(svp.streamName),
-		nats.AckExplicit(),
-		nats.StartSequence(currentSeq-1))
-	if err != nil {
-		svp.log("ERROR: Failed to create subscription: " + err.Error())
-		return
-	}
-
-	svp.consumer = sub
-
-	// Fetch the message
-	msgs, err := sub.Fetch(1, nats.MaxWait(time.Second))
-	if err != nil {
-		if err != nats.ErrTimeout {
-			svp.log("ERROR: Failed to fetch message: " + err.Error())
-		}
-		return
-	}
-
-	if len(msgs) > 0 {
-		svp.log("← Fetching previous message")
-		svp.displayMessage(msgs[0])
-		msgs[0].Ack()
-	}
+	svp.fetchMessage("previous")
 }
 
-func (svp *StreamViewPage) publishMessage() {
-	js, err := svp.Data.CurrCtx.Conn.JetStream()
-	if err != nil {
-		svp.log("Failed to get JetStream context: "+err.Error())
-		return
-	}
-
-	subject := svp.subjectName.GetText()
+func (svp *StreamViewPage) validatePublish(subject, message string) error {
 	if subject == "" {
-		svp.log("ERROR: Subject cannot be empty")
-		return
+		return fmt.Errorf("subject cannot be empty")
 	}
-
-	message := svp.txtArea.GetText()
 	if message == "" {
-		svp.log("ERROR: Message cannot be empty")
-		return
+		return fmt.Errorf("message cannot be empty")
 	}
 
-	svp.log("PUB[" + subject + "] " + message)
-	svp.txtArea.SetText("", true)
-
-
-	// Get stream info to check subjects
-	stream, err := js.StreamInfo(svp.streamName)
+	streamInfo, err := svp.getStreamInfo()
 	if err != nil {
-		svp.log("ERROR: Failed to get stream info: " + err.Error())
-		return
+		return fmt.Errorf("failed to get stream info: %w", err)
 	}
 
 	// Verify subject matches stream's subject filter
 	subjectAllowed := false
-	for _, s := range stream.Config.Subjects {
+	for _, s := range streamInfo.Config.Subjects {
 		if isValidSubject(subject) && subjectMatches(s, subject) {
 			subjectAllowed = true
 			break
 		}
 	}
 
-	subjectsConfigStr := strings.Join(stream.Config.Subjects, ", ")
-
 	if !subjectAllowed {
-		svp.log("ERROR: Subject does not match stream's subject filter: " + subjectsConfigStr)
+		return fmt.Errorf("subject does not match stream's subject filter: %s", 
+			strings.Join(streamInfo.Config.Subjects, ", "))
+	}
+
+	return nil
+}
+
+func (svp *StreamViewPage) publishMessage() {
+	subject := svp.subjectName.GetText()
+	message := svp.txtArea.GetText()
+
+	if err := svp.validatePublish(subject, message); err != nil {
+		svp.log("ERROR: " + err.Error())
+		return
+	}
+
+	js, err := svp.Data.CurrCtx.Conn.JetStream()
+	if err != nil {
+		svp.log("ERROR: Failed to get JetStream context: " + err.Error())
 		return
 	}
 
@@ -326,6 +280,9 @@ func (svp *StreamViewPage) publishMessage() {
 		svp.log("ERROR: Failed to publish message: " + err.Error())
 		return
 	}
+
+	svp.log("PUB[" + subject + "] " + message)
+	svp.txtArea.SetText("", true)
 
 
 		// Get stream info to check if we're at the end
