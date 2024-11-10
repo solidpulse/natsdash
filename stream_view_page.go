@@ -288,46 +288,12 @@ func (svp *StreamViewPage) publishMessage() {
 	svp.log("PUB[" + subject + "] " + message)
 	svp.txtArea.SetText("", true)
 
+	// After publishing, recreate the consumer at the latest message
+	if err := svp.createConsumer(nats.DeliverLast()); err != nil {
+		svp.log("ERROR: Failed to update consumer: " + err.Error())
+		return
+	}
 
-		// Get stream info to check if we're at the end
-		streamInfo, err := js.StreamInfo(svp.streamName)
-		if err != nil {
-			svp.log("ERROR: Failed to get stream info: " + err.Error())
-			return
-		}
-	
-		// If we have a consumer and we're not at the end, recreate it at the end
-		if svp.consumer != nil {
-			meta, err := svp.consumer.ConsumerInfo()
-			if err != nil {
-				svp.log("ERROR: Failed to get consumer info: " + err.Error())
-				return
-			}
-	
-			if meta.Delivered.Stream < streamInfo.State.LastSeq {
-				svp.log("INFO: Moving to end of stream...")
-				// Clean up existing consumer
-				svp.consumer.Unsubscribe()
-	
-				// Create new subscription starting from the last message
-				filterSubject := svp.filterSubject.GetText()
-				if filterSubject == "" {
-					filterSubject = ">"
-				}
-	
-				sub, err := js.PullSubscribe(filterSubject, "", // Empty name for ephemeral consumer
-					nats.BindStream(svp.streamName),
-					nats.AckExplicit(),
-					nats.DeliverLast())
-				if err != nil {
-					svp.log("ERROR: Failed to create subscription: " + err.Error())
-					return
-				}
-				svp.consumer = sub
-			}
-		}
-	
-	
 	// Fetch the newly published message
 	svp.fetchNextMessage()
 }
