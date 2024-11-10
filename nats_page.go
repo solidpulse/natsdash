@@ -132,6 +132,12 @@ func (cfp *NatsPage) setupInputCapture() {
 }
 
 func (cfp *NatsPage) goBackToContextPage() {
+	// Unsubscribe from NATS subject if there's an active subscription
+	if cfp.Data.CurrCtx.CoreNatsSub != nil {
+		cfp.Data.CurrCtx.CoreNatsSub.Unsubscribe()
+		cfp.Data.CurrCtx.CoreNatsSub = nil
+	}
+
 	// Stop the tailing goroutine
 	cfp.tailingMutex.Lock()
 	if cfp.tailingDone != nil {
@@ -143,7 +149,7 @@ func (cfp *NatsPage) goBackToContextPage() {
 	pages.SwitchToPage("contexts")
 	_, b := pages.GetFrontPage()
 	b.(*ContextPage).Redraw()
-	cfp.app.SetFocus(b) // Add this line
+	cfp.app.SetFocus(b)
 }
 
 func createNatsPageHeaderRow() *tview.Flex {
