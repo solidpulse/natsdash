@@ -299,6 +299,54 @@ func (svp *StreamViewPage) publishMessage() {
 		return
 	}
 
+	// Get stream info to check if we're at the end
+	streamInfo, err := js.StreamInfo(svp.streamName)
+	if err != nil {
+		svp.log("ERROR: Failed to get stream info: " + err.Error())
+		return
+	}
+
+	// If we have a consumer and we're not at the end, recreate it at the end
+	if svp.consumer != nil {
+		meta, err := svp.consumer.ConsumerInfo()
+		if err != nil {
+			svp.log("ERROR: Failed to get consumer info: " + err.Error())
+			return
+		}
+
+		if meta.Delivered.Stream < streamInfo.State.LastSeq {
+			svp.log("INFO: Moving to end of stream before publishing...")
+			
+			// Clean up existing consumer
+			svp.consumer.Unsubscribe()
+
+			// Create new subscription starting from the last message
+			filterSubject := svp.filterSubject.GetText()
+			if filterSubject == "" {
+				filterSubject = ">"
+			}
+
+			sub, err := js.PullSubscribe(filterSubject, "TEMP_VIEW_"+time.Now().Format("20060102150405"),
+				nats.BindStream(svp.streamName),
+				nats.AckExplicit(),
+				nats.DeliverLast())
+			if err != nil {
+				svp.log("ERROR: Failed to create subscription: " + err.Error())
+				return
+			}
+			svp.consumer = sub
+			
+			// Fetch the last message to display it
+			msgs, err := sub.Fetch(1, nats.MaxWait(time.Second))
+			if err != nil && err != nats.ErrTimeout {
+				svp.log("ERROR: Failed to fetch last message: " + err.Error())
+			} else if len(msgs) > 0 {
+				svp.displayMessage(msgs[0])
+				msgs[0].Ack()
+			}
+		}
+	}
+
 	// Get stream info to check subjects
 	stream, err := js.StreamInfo(svp.streamName)
 	if err != nil {
