@@ -203,7 +203,7 @@ func (svp *StreamViewPage) fetchMessage(direction string) {
 		}
 	}
 
-	msgs, err := svp.consumer.Fetch(1, nats.MaxWait(time.Second))
+	msgs, err := svp.consumer.Fetch(1, nats.MaxWait(2*time.Second))
 	if err != nil {
 		if err != nats.ErrTimeout {
 			svp.log("ERROR: Failed to fetch message: " + err.Error())
