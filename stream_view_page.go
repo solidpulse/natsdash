@@ -54,6 +54,9 @@ func (svp *StreamViewPage) setupUI() {
 	svp.filterSubject.SetLabel("Filter Subject: ")
 	svp.filterSubject.SetBorder(true)
 	svp.filterSubject.SetBorderPadding(0, 0, 1, 1)
+	svp.filterSubject.SetDoneFunc(func(key tcell.Key) {
+		svp.updateConsumerFilter()
+	})
 
 	filterRow.AddItem(svp.filterSubject, 0, 1, false)
 
@@ -254,7 +257,6 @@ func (svp *StreamViewPage) displayMessage(msg *nats.Msg) {
 	// Apply grep filter if set
 	grepText := svp.grepFilter.GetText()
 	if grepText != "" && !strings.Contains(strings.ToLower(string(msg.Data)), strings.ToLower(grepText)) {
-		svp.log("Skipping message that doesn't match grep filter"+string(msg.Data))
 		return // Skip messages that don't match grep
 	}
 
