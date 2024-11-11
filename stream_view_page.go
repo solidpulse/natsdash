@@ -131,6 +131,7 @@ func (svp *StreamViewPage) createTemporaryConsumer() {
 	// Clean up previous subscription if exists
 	if svp.consumer != nil {
 		svp.consumer.Unsubscribe()
+		svp.consumer = nil
 	}
 
 	// Create new subscription
@@ -150,6 +151,7 @@ func (svp *StreamViewPage) createTemporaryConsumer() {
 func (svp *StreamViewPage) updateConsumerFilter() {
 	if svp.consumer != nil {
 		svp.consumer.Unsubscribe()
+		svp.consumer = nil
 	}
 	svp.createTemporaryConsumer() // Recreate with new filter
 }
