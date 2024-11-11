@@ -17,6 +17,7 @@ type StreamViewPage struct {
 	app           *tview.Application
 	streamName    string
 	filterSubject *tview.InputField
+	grepFilter    *tview.InputField
 	logView       *tview.TextView
 	subjectName   *tview.InputField
 	txtArea       *tview.TextArea
@@ -45,6 +46,9 @@ func (svp *StreamViewPage) setupUI() {
 	headerRow.SetTitle("Stream View")
 	svp.AddItem(headerRow, 2, 6, false)
 
+	// Filter row
+	filterRow := tview.NewFlex().SetDirection(tview.FlexColumn)
+	
 	// Filter subject field
 	svp.filterSubject = tview.NewInputField()
 	svp.filterSubject.SetLabel("Filter Subject: ")
@@ -54,7 +58,19 @@ func (svp *StreamViewPage) setupUI() {
 		svp.updateConsumerFilter()
 		svp.app.SetFocus(svp.logView)
 	})
-	svp.AddItem(svp.filterSubject, 3, 6, false)
+	filterRow.AddItem(svp.filterSubject, 0, 1, false)
+
+	// Grep filter field
+	svp.grepFilter = tview.NewInputField()
+	svp.grepFilter.SetLabel(" Grep: ")
+	svp.grepFilter.SetBorder(true)
+	svp.grepFilter.SetBorderPadding(0, 0, 1, 1)
+	svp.grepFilter.SetDoneFunc(func(key tcell.Key) {
+		svp.app.SetFocus(svp.logView)
+	})
+	filterRow.AddItem(svp.grepFilter, 0, 1, false)
+
+	svp.AddItem(filterRow, 3, 6, false)
 
 	// Log view for messages
 	svp.logView = tview.NewTextView()
@@ -88,6 +104,23 @@ func (svp *StreamViewPage) setupUI() {
 			return nil
 		} else if event.Key() == tcell.KeyEnter && event.Modifiers() == tcell.ModAlt {
 			svp.publishMessage()
+			return nil
+		}
+		return event
+	})
+	
+	// Add tab navigation between filter fields
+	svp.filterSubject.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyTab {
+			svp.app.SetFocus(svp.grepFilter)
+			return nil
+		}
+		return event
+	})
+	
+	svp.grepFilter.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyTab {
+			svp.app.SetFocus(svp.logView)
 			return nil
 		}
 		return event
@@ -255,6 +288,13 @@ func (svp *StreamViewPage) publishMessage() {
 func (svp *StreamViewPage) displayMessage(msg *nats.Msg) {
 	timestamp := time.Now().Format("15:04:05.00000")
 	text := timestamp + " [" + msg.Subject + "] " + string(msg.Data) + "\n"
+	
+	// Apply grep filter if set
+	grepText := svp.grepFilter.GetText()
+	if grepText != "" && !strings.Contains(strings.ToLower(text), strings.ToLower(grepText)) {
+		return // Skip messages that don't match grep
+	}
+
 	svp.logView.Write([]byte(text))
 	svp.Data.CurrCtx.LogFile.Write([]byte(text))
 	svp.logView.ScrollToEnd()
