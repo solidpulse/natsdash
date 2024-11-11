@@ -2,6 +2,7 @@ package main
 
 import (
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
@@ -20,6 +21,7 @@ type StreamViewPage struct {
 	subjectName   *tview.InputField
 	txtArea       *tview.TextArea
 	consumer      *nats.Subscription
+	consumerMu    sync.Mutex
 }
 
 func NewStreamViewPage(app *tview.Application, data *ds.Data) *StreamViewPage {
@@ -115,12 +117,14 @@ func (svp *StreamViewPage) redraw(ctx *ds.Context) {
 }
 
 func (svp *StreamViewPage) createTemporaryConsumer() {
+	svp.consumerMu.Lock()
+	defer svp.consumerMu.Unlock()
+
 	js, err := svp.Data.CurrCtx.Conn.JetStream()
 	if err != nil {
 		svp.log("ERROR: Failed to get JetStream context: " + err.Error())
 		return
 	}
-
 
 	// Create ephemeral consumer subscription
 	filterSubject := svp.filterSubject.GetText()
@@ -130,21 +134,30 @@ func (svp *StreamViewPage) createTemporaryConsumer() {
 
 	// Clean up previous subscription if exists
 	if svp.consumer != nil {
-		svp.consumer.Unsubscribe()
+		if err := svp.consumer.Unsubscribe(); err != nil {
+			svp.log("WARN: Error unsubscribing consumer: " + err.Error())
+		}
 		svp.consumer = nil
 	}
 
-	// Create new subscription
+	// Create new subscription with explicit options
 	sub, err := js.PullSubscribe(filterSubject, "", // Empty name for ephemeral consumer
 		nats.BindStream(svp.streamName),
-		nats.AckExplicit())
+		nats.AckExplicit(),
+		nats.ManualAck())
 	if err != nil {
 		svp.log("ERROR: Failed to create subscription: " + err.Error())
 		return
 	}
 
-	svp.log("INFO: subscribed to: " + filterSubject)
+	// Verify the subscription is valid
+	if _, err := sub.ConsumerInfo(); err != nil {
+		svp.log("ERROR: Failed to verify consumer: " + err.Error())
+		sub.Unsubscribe()
+		return
+	}
 
+	svp.log("INFO: subscribed to: " + filterSubject)
 	svp.consumer = sub
 }
 
@@ -394,9 +407,15 @@ func (svp *StreamViewPage) log(message string) {
 }
 
 func (svp *StreamViewPage) goBack() {
+	svp.consumerMu.Lock()
 	if svp.consumer != nil {
-		svp.consumer.Unsubscribe()
+		if err := svp.consumer.Unsubscribe(); err != nil {
+			svp.log("WARN: Error unsubscribing consumer: " + err.Error())
+		}
+		svp.consumer = nil
 	}
+	svp.consumerMu.Unlock()
+	
 	pages.SwitchToPage("streamListPage")
 	_, b := pages.GetFrontPage()
 	b.(*StreamListPage).redraw(&svp.Data.CurrCtx)
