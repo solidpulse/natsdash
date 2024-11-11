@@ -342,48 +342,48 @@ func (svp *StreamViewPage) publishMessage() {
 		return
 	}
 
+	// Lock for consumer operations
+	svp.consumerMu.Lock()
+	defer svp.consumerMu.Unlock()
 
-		// Get stream info to check if we're at the end
-		streamInfo, err := js.StreamInfo(svp.streamName)
-		if err != nil {
-			svp.log("ERROR: Failed to get stream info: " + err.Error())
-			return
+	// Clean up existing consumer if it exists
+	if svp.consumer != nil {
+		if err := svp.consumer.Unsubscribe(); err != nil {
+			svp.log("WARN: Error unsubscribing consumer: " + err.Error())
 		}
-	
-		// If we have a consumer and we're not at the end, recreate it at the end
-		if svp.consumer != nil {
-			meta, err := svp.consumer.ConsumerInfo()
-			if err != nil {
-				svp.log("ERROR: Failed to get consumer info: " + err.Error())
-				return
-			}
-	
-			if meta.Delivered.Stream < streamInfo.State.LastSeq {
-				svp.log("INFO: Moving to end of stream...")
-				// Clean up existing consumer
-				svp.consumer.Unsubscribe()
-	
-				// Create new subscription starting from the last message
-				filterSubject := svp.filterSubject.GetText()
-				if filterSubject == "" {
-					filterSubject = ">"
-				}
-	
-				sub, err := js.PullSubscribe(filterSubject, "", // Empty name for ephemeral consumer
-					nats.BindStream(svp.streamName),
-					nats.AckExplicit(),
-					nats.DeliverLast())
-				if err != nil {
-					svp.log("ERROR: Failed to create subscription: " + err.Error())
-					return
-				}
-				svp.consumer = sub
-			}
-		}
-	
-	
-	// Fetch the newly published message
-	svp.fetchNextMessage()
+		svp.consumer = nil
+	}
+
+	// Create new subscription starting from the published message
+	filterSubject := svp.filterSubject.GetText()
+	if filterSubject == "" {
+		filterSubject = ">"
+	}
+
+	sub, err := js.PullSubscribe(filterSubject, "", 
+		nats.BindStream(svp.streamName),
+		nats.AckExplicit(),
+		nats.DeliverLast())
+	if err != nil {
+		svp.log("ERROR: Failed to create subscription: " + err.Error())
+		return
+	}
+
+	// Verify the subscription is valid
+	if _, err := sub.ConsumerInfo(); err != nil {
+		svp.log("ERROR: Failed to verify consumer: " + err.Error())
+		sub.Unsubscribe()
+		return
+	}
+
+	svp.consumer = sub
+	svp.log("INFO: Created new consumer at latest message")
+
+	// Fetch the newly published message outside the lock
+	go func() {
+		time.Sleep(100 * time.Millisecond) // Give NATS time to process the publish
+		svp.fetchNextMessage()
+	}()
 }
 
 func (svp *StreamViewPage) displayMessage(msg *nats.Msg) {
