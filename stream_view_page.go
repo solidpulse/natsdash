@@ -36,8 +36,13 @@ func NewStreamViewPage(app *tview.Application, data *ds.Data) *StreamViewPage {
 }
 
 func (svp *StreamViewPage) setupUI() {
-	// Header setup
-	headerRow := createStreamViewHeaderRow()
+	// Header setup with simplified controls
+	headerText := "[Esc] Back | [Tab] Next Field | [Alt+Enter] Send"
+	headerRow := tview.NewFlex().
+		SetDirection(tview.FlexColumn).
+		SetBorderPadding(1, 0, 1, 1)
+	headerRow.AddItem(createTextView(headerText, tcell.ColorWhite), 0, 1, false)
+	headerRow.SetTitle("Stream View")
 	svp.AddItem(headerRow, 2, 6, false)
 
 	// Filter subject field
@@ -94,15 +99,8 @@ func (svp *StreamViewPage) setupUI() {
 
 func (svp *StreamViewPage) setupInputCapture() {
 	svp.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		switch event.Key() {
-		case tcell.KeyEsc:
+		if event.Key() == tcell.KeyEsc {
 			svp.goBack()
-			return nil
-		case tcell.KeyLeft:
-			svp.fetchPreviousMessage()
-			return nil
-		case tcell.KeyRight:
-			svp.fetchNextMessage()
 			return nil
 		}
 		return event
@@ -126,12 +124,6 @@ func (svp *StreamViewPage) createTemporaryConsumer() {
 		return
 	}
 
-	// Create ephemeral consumer subscription
-	filterSubject := svp.filterSubject.GetText()
-	if filterSubject == "" {
-		filterSubject = ">" // Subscribe to all subjects if no filter
-	}
-
 	// Clean up previous subscription if exists
 	if svp.consumer != nil {
 		if err := svp.consumer.Unsubscribe(); err != nil {
@@ -140,25 +132,26 @@ func (svp *StreamViewPage) createTemporaryConsumer() {
 		svp.consumer = nil
 	}
 
-	// Create new subscription with explicit options
-	sub, err := js.PullSubscribe(filterSubject, "", // Empty name for ephemeral consumer
-		nats.BindStream(svp.streamName),
-		nats.AckExplicit(),
-		nats.ManualAck())
+	// Create ephemeral consumer subscription
+	filterSubject := svp.filterSubject.GetText()
+	if filterSubject == "" {
+		filterSubject = ">" // Subscribe to all subjects if no filter
+	}
+
+	// Create new subscription that delivers new messages
+	sub, err := js.Subscribe(filterSubject, func(msg *nats.Msg) {
+		svp.displayMessage(msg)
+		msg.Ack()
+	}, nats.BindStream(svp.streamName),
+	   nats.DeliverNew(),
+	   nats.AckExplicit())
 	if err != nil {
 		svp.log("ERROR: Failed to create subscription: " + err.Error())
 		return
 	}
 
-	// Verify the subscription is valid
-	if _, err := sub.ConsumerInfo(); err != nil {
-		svp.log("ERROR: Failed to verify consumer: " + err.Error())
-		sub.Unsubscribe()
-		return
-	}
-
-	svp.log("INFO: subscribed to: " + filterSubject)
 	svp.consumer = sub
+	svp.log("INFO: Subscribed to: " + filterSubject + " (new messages only)")
 }
 
 func (svp *StreamViewPage) updateConsumerFilter() {
@@ -169,126 +162,7 @@ func (svp *StreamViewPage) updateConsumerFilter() {
 	svp.createTemporaryConsumer() // Recreate with new filter
 }
 
-func (svp *StreamViewPage) fetchNextMessage() {
-	if svp.consumer == nil {
-		return
-	}
 
-	// Get stream info to check current state
-	js, err := svp.Data.CurrCtx.Conn.JetStream()
-	if err != nil {
-		svp.log("ERROR: Failed to get JetStream context: " + err.Error())
-		return
-	}
-
-	// Get consumer info to find current sequence
-	meta, err := svp.consumer.ConsumerInfo()
-	if err != nil {
-		svp.log("ERROR: Failed to get consumer info: " + err.Error())
-		return
-	}
-
-	// Get stream info
-	streamInfo, err := js.StreamInfo(svp.streamName)
-	if err != nil {
-		svp.log("ERROR: Failed to get stream info: " + err.Error())
-		return
-	}
-
-	// Check if we're at the end of the stream
-	if meta.Delivered.Stream >= streamInfo.State.LastSeq {
-		svp.log("INFO: Already at the end of the stream")
-		return
-	}
-
-	msgs, err := svp.consumer.Fetch(1, nats.MaxWait(time.Second))
-	if err != nil {
-		if err != nats.ErrTimeout {
-			svp.log("ERROR: Failed to fetch message: " + err.Error())
-		} else {
-			svp.log("INFO: No more messages available currently")
-		}
-		return
-	}
-
-	if len(msgs) > 0 {
-		svp.log("→ Fetching next message")
-		svp.displayMessage(msgs[0])
-		msgs[0].Ack()
-	}
-}
-
-func (svp *StreamViewPage) fetchPreviousMessage() {
-	if svp.consumer == nil {
-		return
-	}
-
-	// Get stream info to check current state
-	js, err := svp.Data.CurrCtx.Conn.JetStream()
-	if err != nil {
-		svp.log("ERROR: Failed to get JetStream context: " + err.Error())
-		return
-	}
-
-	// Get the metadata from the last message
-	meta, err := svp.consumer.ConsumerInfo()
-	if err != nil {
-		svp.log("ERROR: Failed to get consumer info: " + err.Error())
-		return
-	}
-
-	// Get stream info
-	streamInfo, err := js.StreamInfo(svp.streamName)
-	if err != nil {
-		svp.log("ERROR: Failed to get stream info: " + err.Error())
-		return
-	}
-
-	// Calculate the previous sequence number based on stream sequence
-	currentSeq := meta.Delivered.Stream
-	if currentSeq <= streamInfo.State.FirstSeq {
-		svp.log("INFO: Already at the beginning of the stream")
-		return
-	}
-
-	
-	// Clean up previous subscription
-	if svp.consumer != nil {
-		svp.consumer.Unsubscribe()
-	}
-
-	// Create new subscription starting from previous sequence
-	filterSubject := svp.filterSubject.GetText()
-	if filterSubject == "" {
-		filterSubject = ">"
-	}
-
-	sub, err := js.PullSubscribe(filterSubject, "", // Empty name for ephemeral consumer
-		nats.BindStream(svp.streamName),
-		nats.AckExplicit(),
-		nats.StartSequence(currentSeq-1))
-	if err != nil {
-		svp.log("ERROR: Failed to create subscription: " + err.Error())
-		return
-	}
-
-	svp.consumer = sub
-
-	// Fetch the message
-	msgs, err := sub.Fetch(1, nats.MaxWait(time.Second))
-	if err != nil {
-		if err != nats.ErrTimeout {
-			svp.log("ERROR: Failed to fetch message: " + err.Error())
-		}
-		return
-	}
-
-	if len(msgs) > 0 {
-		svp.log("← Fetching previous message")
-		svp.displayMessage(msgs[0])
-		msgs[0].Ack()
-	}
-}
 
 func (svp *StreamViewPage) publishMessage() {
 	js, err := svp.Data.CurrCtx.Conn.JetStream()
@@ -376,14 +250,7 @@ func (svp *StreamViewPage) publishMessage() {
 		return
 	}
 
-	svp.consumer = sub
-	svp.log("INFO: Created new consumer at latest message")
-
-	// Fetch the newly published message outside the lock
-	go func() {
-		time.Sleep(100 * time.Millisecond) // Give NATS time to process the publish
-		svp.fetchNextMessage()
-	}()
+	svp.log("INFO: Message published successfully")
 }
 
 func (svp *StreamViewPage) displayMessage(msg *nats.Msg) {
