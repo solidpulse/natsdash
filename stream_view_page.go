@@ -38,9 +38,9 @@ func NewStreamViewPage(app *tview.Application, data *ds.Data) *StreamViewPage {
 func (svp *StreamViewPage) setupUI() {
 	// Header setup with simplified controls
 	headerText := "[Esc] Back | [Tab] Next Field | [Alt+Enter] Send"
-	headerRow := tview.NewFlex().
-		SetDirection(tview.FlexColumn).
-		SetBorderPadding(1, 0, 1, 1)
+	headerRow := tview.NewFlex()
+	headerRow.SetDirection(tview.FlexColumn)
+	headerRow.SetBorderPadding(1, 0, 1, 1)
 	headerRow.AddItem(createTextView(headerText, tcell.ColorWhite), 0, 1, false)
 	headerRow.SetTitle("Stream View")
 	svp.AddItem(headerRow, 2, 6, false)
@@ -250,7 +250,6 @@ func (svp *StreamViewPage) publishMessage() {
 		return
 	}
 
-	svp.log("INFO: Message published successfully")
 }
 
 func (svp *StreamViewPage) displayMessage(msg *nats.Msg) {
