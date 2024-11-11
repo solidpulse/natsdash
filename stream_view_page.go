@@ -54,10 +54,7 @@ func (svp *StreamViewPage) setupUI() {
 	svp.filterSubject.SetLabel("Filter Subject: ")
 	svp.filterSubject.SetBorder(true)
 	svp.filterSubject.SetBorderPadding(0, 0, 1, 1)
-	svp.filterSubject.SetDoneFunc(func(key tcell.Key) {
-		svp.updateConsumerFilter()
-		svp.app.SetFocus(svp.logView)
-	})
+
 	filterRow.AddItem(svp.filterSubject, 0, 1, false)
 
 	// Grep filter field
@@ -112,6 +109,7 @@ func (svp *StreamViewPage) setupUI() {
 	// Add tab navigation between filter fields
 	svp.filterSubject.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyTab {
+			svp.updateConsumerFilter()
 			svp.app.SetFocus(svp.grepFilter)
 			return nil
 		}
@@ -174,10 +172,8 @@ func (svp *StreamViewPage) createTemporaryConsumer() {
 	// Create new subscription that delivers new messages
 	sub, err := js.Subscribe(filterSubject, func(msg *nats.Msg) {
 		svp.displayMessage(msg)
-		msg.Ack()
 	}, nats.BindStream(svp.streamName),
-	   nats.DeliverNew(),
-	   nats.AckExplicit())
+	   nats.DeliverNew())
 	if err != nil {
 		svp.log("ERROR: Failed to create subscription: " + err.Error())
 		return
@@ -249,40 +245,6 @@ func (svp *StreamViewPage) publishMessage() {
 		return
 	}
 
-	// Lock for consumer operations
-	svp.consumerMu.Lock()
-	defer svp.consumerMu.Unlock()
-
-	// Clean up existing consumer if it exists
-	if svp.consumer != nil {
-		if err := svp.consumer.Unsubscribe(); err != nil {
-			svp.log("WARN: Error unsubscribing consumer: " + err.Error())
-		}
-		svp.consumer = nil
-	}
-
-	// Create new subscription starting from the published message
-	filterSubject := svp.filterSubject.GetText()
-	if filterSubject == "" {
-		filterSubject = ">"
-	}
-
-	sub, err := js.PullSubscribe(filterSubject, "", 
-		nats.BindStream(svp.streamName),
-		nats.AckExplicit(),
-		nats.DeliverLast())
-	if err != nil {
-		svp.log("ERROR: Failed to create subscription: " + err.Error())
-		return
-	}
-
-	// Verify the subscription is valid
-	if _, err := sub.ConsumerInfo(); err != nil {
-		svp.log("ERROR: Failed to verify consumer: " + err.Error())
-		sub.Unsubscribe()
-		return
-	}
-
 }
 
 func (svp *StreamViewPage) displayMessage(msg *nats.Msg) {
@@ -291,7 +253,8 @@ func (svp *StreamViewPage) displayMessage(msg *nats.Msg) {
 	
 	// Apply grep filter if set
 	grepText := svp.grepFilter.GetText()
-	if grepText != "" && !strings.Contains(strings.ToLower(text), strings.ToLower(grepText)) {
+	if grepText != "" && !strings.Contains(strings.ToLower(string(msg.Data)), strings.ToLower(grepText)) {
+		svp.log("Skipping message that doesn't match grep filter"+string(msg.Data))
 		return // Skip messages that don't match grep
 	}
 
