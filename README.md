@@ -10,23 +10,20 @@ NatsDash is an intuitive dashboard/GUI for NATS designed to manage and monitor N
 
 ## Features Overview
 
-![Context Management](static/context-list.png)
+![Context Management](static/nats-gui-context-list.png)
 *Manage multiple NATS server connections with easy context switching*
 
-![Stream List View](static/stream-list.png)
+![Stream List View](static/nats-gui-stream-list.png)
 *View and manage all your JetStream streams in one place*
 
-![Stream Details](static/stream-info.png)
-*Detailed stream information and configuration at a glance*
+![Stream Details](static/nats-gui-ui-core.png)
+*Interact with NATS Core functionality, such as publishing and subscribing*
 
-![Message Viewer](static/stream-view.png)
+![Message Viewer](static/nats-gui-ui-stream-interact.png)
 *Real-time message monitoring with subject filtering and grep capabilities*
 
-![Stream Creation](static/stream-add.png)
-*Create new streams with a simple YAML configuration interface*
-
-![Server Information](static/server-info.png)
-*Monitor server statistics and connection details*
+![Stream Creation](static/nats-ui-gui-manage-consumers.png)
+*Create new JetStream consumers and manage existing ones*
 
 
 # NatsDash Installer
